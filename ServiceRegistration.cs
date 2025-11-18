@@ -14,29 +14,24 @@ namespace Messaging.Kafka
             IConfiguration configuration
         )
         {
-            services.Configure<ProducerKafkaOptions>(configuration.GetSection("Kafka"));
-            services.Configure<ConsumerKafkaOptions>(configuration.GetSection("Kafka"));
+            services.Configure<ProducerKafkaOptions>(configuration.GetSection("KafkaProducer"));
+            services.Configure<ConsumerKafkaOptions>(configuration.GetSection("KafkaConsumer"));
             services.Configure<ConsumerKafkaOptions>(options =>
                 options.Topics =
-                    configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new()
+                    configuration.GetSection("KafkaConsumer:Topics").Get<List<string>>() ?? new()
                     {
                         "topic1",
                         "topic2",
                     }
             );
             services.AddScoped<ISerializer, SystemTextJsonSerializer>();
-            services.AddScoped<IKafkaConsumer, KafkaConsumer>();
-            services.AddScoped<IKafkaProducer, KafkaProducer>();
+            services.AddSingleton<IKafkaProducer, KafkaProducer>();
+            services.AddSingleton<IKafkaConsumer, KafkaConsumer>();
+            services.AddHostedService<KafkaConsumer>();
             KafkaConfiguration(services);
             return services;
         }
 
-        public static void KafkaConfiguration(IServiceCollection services)
-        {
-            // your topics in here
-            var topics = new List<string> { "topic1", "topics2" };
-
-            services.AddSingleton(topics);
-        }
+        public static void KafkaConfiguration(IServiceCollection services) { }
     }
 }

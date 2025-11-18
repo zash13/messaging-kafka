@@ -50,6 +50,8 @@ namespace Messaging.Kafka.Services
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            if (_options.Topics == null || !_options.Topics.Any())
+                throw new InvalidOperationException("No Kafka topics configured.");
             _consumer.Subscribe(_options.Topics);
 
             return Task.Run(() => ConsumeLoop(stoppingToken), stoppingToken);
