@@ -66,9 +66,10 @@ namespace Messaging.Kafka.Services
                         continue;
 
                     if (_onMessageReceived != null)
+                    {
                         await _onMessageReceived(result);
-
-                    _consumer.Commit(result);
+                        _consumer.Commit(result);
+                    }
                 }
                 catch (ConsumeException ce)
                 {

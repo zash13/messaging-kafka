@@ -1,9 +1,3 @@
-// add this part to your program.cs
-/*
-     builder.Services.Configure<ProducerKafkaOptions>(
-        builder.Configuration.GetSection("Kafka")
-    );
-*/
 using System.Collections.Generic;
 using Messaging.Kafka.Config;
 using Messaging.Kafka.Services;
@@ -20,6 +14,16 @@ namespace Messaging.Kafka
             IConfiguration configuration
         )
         {
+            services.Configure<ProducerKafkaOptions>(configuration.GetSection("Kafka"));
+            services.Configure<ConsumerKafkaOptions>(configuration.GetSection("Kafka"));
+            services.Configure<ConsumerKafkaOptions>(options =>
+                options.Topics =
+                    configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new()
+                    {
+                        "topic1",
+                        "topic2",
+                    }
+            );
             services.AddScoped<ISerializer, SystemTextJsonSerializer>();
             services.AddScoped<IKafkaConsumer, KafkaConsumer>();
             services.AddScoped<IKafkaProducer, KafkaProducer>();

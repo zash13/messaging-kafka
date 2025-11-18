@@ -1,12 +1,13 @@
 {
   "Kafka": {
     "BootstrapServers": "192.168.19.20:9092",
+    "ProducerClientId": "producer",
+    "DefaultPartitions": 3
+  },
+  "KafkaConsumer": {
     "GroupId": "group",
     "EnableAutoCommit": false,
     "AutoOffsetReset": "Earliest",
-    "ProducerClientId": "producer",
-    "DefaultPartitions": 3,
-    "DlqTopicSuffix": "-dlq",
-    "EnableDlq": true
+    "Topics": ["topic1", "topic2"]
   }
 }

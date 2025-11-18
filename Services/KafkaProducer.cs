@@ -23,6 +23,9 @@ namespace Messaging.Kafka.Services
                 BootstrapServers = _options?.BootstrapServers,
                 ClientId = _options.ProducerClientId,
                 Acks = Acks.All,
+                EnableIdempotence = true,
+                MessageSendMaxRetries = 5,
+                RetryBackoffMs = 100,
             };
 
             _producer = new ProducerBuilder<string, string>(config).Build();
