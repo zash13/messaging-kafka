@@ -1,0 +1,11 @@
+using System;
+
+namespace Messaging.Kafka.Services
+{
+    public interface ISerializer
+    {
+        string Serialize(object obj);
+        object? Deserialize(string json, Type targetType);
+        T? Deserialize<T>(string json);
+    }
+}
