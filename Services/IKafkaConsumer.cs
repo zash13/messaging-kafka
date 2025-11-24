@@ -1,12 +1,17 @@
 using Confluent.Kafka;
+using Messaging.Kafka.Config;
+using Microsoft.Extensions.Hosting;
 
 namespace Messaging.Kafka.Services
 {
-    public interface IKafkaConsumer
+    public interface IKafkaConsumer : IHostedService, IDisposable
     {
-        /// <summary>
-        /// Register handler for raw consumed messages.
-        /// </summary>
-        void OnMessageReceived(Func<ConsumeResult<string, string>, Task> handler);
+
+        void ConsumeSingleMessage(string topic);
+
+        void ConsumeMessages(string topic);
+
+        void Commit(ConsumeResult<string, string> consumeResult);
+
     }
 }
