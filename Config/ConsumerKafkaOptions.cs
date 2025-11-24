@@ -2,15 +2,15 @@ namespace Messaging.Kafka.Config
 {
     public class ConsumerKafkaOptions
     {
-        public string BootstrapServers { get; set; } = "";
-        public string GroupId { get; set; } = "";
-
+        public string BootstrapServers { get; set; } = "localhost:9092";
+        public string GroupId { get; set; } = "default-group";
         public bool EnableAutoCommit { get; set; } = false;
-        public string AutoOffsetReset { get; set; } = "Earliest";
-
-        public List<string> Topics { get; set; } = new List<string>();
-
-        public bool EnableDlq { get; set; } = false;
-        public string DlqTopicSuffix { get; set; } = "-dlq";
+        public string AutoOffsetReset { get; set; } = "earliest";
+        public string[] Topics { get; set; } = Array.Empty<string>();
+        public int SessionTimeoutMs { get; set; } = 10000;
+        public int HeartbeatIntervalMs { get; set; } = 3000;
+        public int MaxPollIntervalMs { get; set; } = 300000;
+        public int QueuedMinMessages { get; set; } = 100000;
+        public bool EnablePartitionEof { get; set; } = false;
     }
 }
