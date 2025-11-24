@@ -12,6 +12,7 @@ namespace Messaging.Kafka.Common
         public string? CorrelationId { get; set; }
         public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
         public Dictionary<string, string>? Metadata { get; set; }
+        public long Offset { get; set; } = 0;
         public object? Data { get; set; } // actual event payload
     }
 }

@@ -1,19 +1,18 @@
-// read this repo
-// https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/examples/Consumer/Program.cs
 using System.Text.Json;
 using Confluent.Kafka;
 using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Messaging.Kafka.Interfaces;
 
 namespace Messaging.Kafka.Services
 {
 
-    public class KafkaConsumer : IKafkaConsumer, IDisposable
+    public class KafkaConsumer : BackgroundService, IKafkaConsumer
     {
         private readonly IConsumer<string, string> _consumer;
-        // OR (if you want to read the key later)
-        // private readonly IConsumer<string, string> _consumer;
+        private readonly IEnumerable<string> _topics;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -53,6 +52,10 @@ namespace Messaging.Kafka.Services
 
             _consumer = new ConsumerBuilder<string, string>(consumerConfig).SetValueDeserializer(Deserializers.Utf8).Build();
         }
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            return Task.Run(() => StartConsumerLoop(stoppingToken), stoppingToken);
+        }
         private void Subscribe(IEnumerable<string> topics)
         {
             _consumer.Subscribe(topics);
@@ -62,85 +65,47 @@ namespace Messaging.Kafka.Services
             _consumer.Subscribe(topic);
         }
         private void Unsubscribe() => _consumer.Unsubscribe();
-        public void ConsumeSingleMessage(string topic)
+
+        public void StartConsumerLoop(CancellationToken cancellationToken)
         {
-            Subscribe(topic);
-            try
+            Subscribe(this._topics);
+            while (!cancellationToken.IsCancellationRequested)
             {
-                var consumeResult = _consumer.Consume();
-                if (consumeResult != null && !consumeResult.IsPartitionEOF)
-                {
-                    try
-                    {
-                        Console.WriteLine(consumeResult.Message.ToString());
-                        var envelope = JsonSerializer.Deserialize<Envelope>(
-                            consumeResult.Message.Value,
-                            _jsonOptions
-                        )!;
-
-                        Console.WriteLine(
-                            $"Event: {envelope.EventType} | Key: {consumeResult.Message.Key} | Aggregate: {envelope.AggregateId}"
-                        );
-                        Console.WriteLine($"envelope sutff : {envelope.Data.ToString()}");
-
-                        _consumer.Commit(consumeResult);
-                        Console.WriteLine("message committed successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Processing failed → {ex.Message}");
-                        // No commit → message will be retried
-                    }
-                    Console.WriteLine($"Consumed message: {consumeResult.Message.Value}");
-                }
-                else
-                {
-                    Console.WriteLine("No message available or reached end of partition.");
-                }
-            }
-            catch (ConsumeException e)
-            {
-                Console.WriteLine($"Error consuming message: {e.Error.Reason}");
-            }
-        }
-        public void ConsumeMessages(string topic)
-        {
-            Subscribe(topic);
-
-            try
-            {
-                while (true)
+                try
                 {
                     var consumeResult = _consumer.Consume();
-                    try
+                    if (consumeResult != null && !consumeResult.IsPartitionEOF)
                     {
-                        Console.WriteLine(consumeResult.Message.ToString());
-                        var envelope = JsonSerializer.Deserialize<Envelope>(
-                            consumeResult.Message.Value,
-                            _jsonOptions
-                        )!;
-
-                        Console.WriteLine(
-                            $"Event: {envelope.EventType} | Key: {consumeResult.Message.Key} | Aggregate: {envelope.AggregateId}"
-                        );
-
-                        _consumer.Commit(consumeResult);
-                        Console.WriteLine("message commited successfully ");
+                        try
+                        {
+                            var envelope = JsonSerializer.Deserialize<Envelope>(
+                                consumeResult.Message.Value,
+                                _jsonOptions
+                            )!;
+                            // place where handler will implement in future , 
+                            // soprogramming work in progress 
+                            _consumer.Commit(consumeResult);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new ApplicationException(
+                                $"Processing failed for message: {consumeResult.Message.Value}", ex
+                            );
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Processing failed → {ex.Message}");
-                        // No commit → message will be retried
-                    }
-                    Console.WriteLine($"Consumed message: {consumeResult.Message.Value}");
+                    else return;
+                }
+                catch (ConsumeException e)
+                {
+                    throw new ApplicationException(
+                        $"Error consuming message: {e.Error.Reason}"
+                    );
                 }
             }
-            catch (ConsumeException e)
-            {
-                Console.WriteLine($"Error consuming message: {e.Error.Reason}");
-            }
         }
-        public void Dispose()
+        // override dispose from BackgroundService 
+        // i mean this come from BackgroundService not IDispose 
+        public override void Dispose()
         {
             _consumer?.Dispose();
         }
