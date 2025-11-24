@@ -7,18 +7,21 @@ public static class EmbeddedConfiguration
     {
         var assembly = Assembly.GetExecutingAssembly();
 
-        using var consumerStream = assembly.GetManifestResourceStream("Messaging.Kafka.consumer.config.json");
-        if (consumerStream != null)
-        {
-            builder.AddJsonStream(consumerStream);
-        }
-
-        using var producerStream = assembly.GetManifestResourceStream("Messaging.Kafka.producer.config.json");
-        if (producerStream != null)
-        {
-            builder.AddJsonStream(producerStream);
-        }
+        AddEmbeddedJsonConfig(builder, assembly, "Messaging.Kafka.consumer.config.json");
+        AddEmbeddedJsonConfig(builder, assembly, "Messaging.Kafka.producer.config.json");
 
         return builder;
+    }
+
+    private static void AddEmbeddedJsonConfig(IConfigurationBuilder builder, Assembly assembly, string resourceName)
+    {
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream != null)
+        {
+            using var reader = new StreamReader(stream);
+            var jsonContent = reader.ReadToEnd();
+            var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonContent));
+            builder.AddJsonStream(memoryStream);
+        }
     }
 }

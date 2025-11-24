@@ -10,7 +10,7 @@
     "MaxPollIntervalMs": 300000,
     "QueuedMinMessages": 100000,
     "Topics": [
-      "test-topic"
+      "topic1"
     ]
   }
 }

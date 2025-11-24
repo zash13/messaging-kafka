@@ -43,7 +43,8 @@ namespace Messaging.Kafka.Services
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            return Task.Run(() => StartConsumerLoop(stoppingToken), stoppingToken);
+            StartConsumerLoop(stoppingToken);
+            return Task.CompletedTask;
         }
         private void Subscribe(IEnumerable<string> topics)
         {
@@ -57,39 +58,51 @@ namespace Messaging.Kafka.Services
 
         public void StartConsumerLoop(CancellationToken cancellationToken)
         {
-            Subscribe(this._topics);
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    var consumeResult = _consumer.Consume();
-                    if (consumeResult != null && !consumeResult.IsPartitionEOF)
+                    TrySubscribe();
+
+                    Console.WriteLine("Kafka consumer subscribed. Waiting for messages...");
+
+                    while (!cancellationToken.IsCancellationRequested)
                     {
                         try
                         {
-                            var envelope = JsonSerializer.Deserialize<Envelope>(
-                                consumeResult.Message.Value,
-                                _jsonOptions
-                            )!;
-                            // place where handler will implement in future , 
-                            // soprogramming work in progress 
-                            _consumer.Commit(consumeResult);
+                            var result = _consumer.Consume(cancellationToken);
+
+                            if (result is { IsPartitionEOF: false })
+                            {
+                                var envelope = JsonSerializer.Deserialize<Envelope>(result.Message.Value);
+                                Console.WriteLine($"CONSUMED → {result.Topic} | {result.Offset}");
+                                _consumer.Commit(result);
+                            }
                         }
-                        catch (Exception ex)
+                        catch (ConsumeException ex)
                         {
-                            throw new ApplicationException(
-                                $"Processing failed for message: {consumeResult.Message.Value}", ex
-                            );
+                            Console.WriteLine($"Consume error: {ex.Error.Reason}");
                         }
                     }
-                    else return;
                 }
-                catch (ConsumeException e)
+                catch (KafkaException ex) when (ex.Error.Code == ErrorCode.UnknownTopicOrPart)
                 {
-                    throw new ApplicationException(
-                        $"Error consuming message: {e.Error.Reason}"
-                    );
+                    Console.WriteLine("Topic not created yet, retrying in 5 seconds...");
+                    Task.Delay(5000, cancellationToken);
                 }
+            }
+        }
+        private void TrySubscribe()
+        {
+            try
+            {
+                _consumer.Subscribe(_topics);
+
+                Console.WriteLine("Subscribed OK");
+            }
+            catch (KafkaException e) when (e.Error.Code == ErrorCode.UnknownTopicOrPart)
+            {
+                throw;
             }
         }
         // override dispose from BackgroundService 
