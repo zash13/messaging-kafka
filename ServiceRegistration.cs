@@ -13,7 +13,6 @@ namespace Messaging.Kafka
         {
             services.Configure<ConsumerKafkaOptions>(configuration.GetSection("ConsumerKafkaOptions"));
             services.Configure<ProducerKafkaOptions>(configuration.GetSection("ProducerKafkaOptions"));
-
             services.AddSingleton<ISerializer, SystemTextJsonSerializer>();
             services.AddSingleton<KafkaConsumer>();
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
