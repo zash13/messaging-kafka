@@ -1,0 +1,16 @@
+{
+  "ConsumerKafkaOptions": {
+    "BootstrapServers": "10.233.107.157:9092",
+    "GroupId": "my-app-consumer-group-v2",
+    "EnableAutoCommit": false,
+    "AutoOffsetReset": "earliest",
+    "EnablePartitionEof": false,
+    "SessionTimeoutMs": 10000,
+    "HeartbeatIntervalMs": 3000,
+    "MaxPollIntervalMs": 300000,
+    "QueuedMinMessages": 100000,
+    "Topics": [
+      "test-topic"
+    ]
+  }
+}
