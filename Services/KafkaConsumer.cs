@@ -4,12 +4,11 @@ using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Messaging.Kafka.Interfaces;
 
 namespace Messaging.Kafka.Services
 {
 
-    public class KafkaConsumer : BackgroundService, IKafkaConsumer
+    public class KafkaConsumer : BackgroundService
     {
         private readonly IConsumer<string, string> _consumer;
         private readonly IEnumerable<string> _topics;
