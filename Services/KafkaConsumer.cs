@@ -4,6 +4,8 @@ using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+
 
 namespace Messaging.Kafka.Services
 {
@@ -12,44 +14,32 @@ namespace Messaging.Kafka.Services
     {
         private readonly IConsumer<string, string> _consumer;
         private readonly IEnumerable<string> _topics;
-
+        private readonly ConsumerKafkaOptions _options;
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
         };
-        public KafkaConsumer()
+        public KafkaConsumer(IOptions<ConsumerKafkaOptions> optionsAccessor)
         {
-            var configPath = Path.GetFullPath(
-                Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "..",
-                    "Messaging.Kafka",
-                    "consumer.config.json"
-                )
-            );
-            Console.WriteLine(configPath.ToString());
-
-            var config = new ConfigurationBuilder()
-                .AddJsonFile(configPath, optional: false, reloadOnChange: false)
-                .Build();
-            var options =
-                config.GetSection("ConsumerKafkaOptions").Get<ConsumerKafkaOptions>()
-                ?? throw new Exception("Failed to load consumer.config.json");
+            _options = optionsAccessor.Value ?? throw new ArgumentNullException(nameof(optionsAccessor));
+            _topics = _options.Topics ?? throw new InvalidOperationException("Topics must be configured in ConsumerKafkaOptions");
 
             var consumerConfig = new ConsumerConfig
             {
-                BootstrapServers = options.BootstrapServers,
-                GroupId = options.GroupId,
-                EnableAutoCommit = options.EnableAutoCommit,
-                AutoOffsetReset = Enum.Parse<AutoOffsetReset>(options.AutoOffsetReset, true),
-                SessionTimeoutMs = options.SessionTimeoutMs,
-                HeartbeatIntervalMs = options.HeartbeatIntervalMs,
-                MaxPollIntervalMs = options.MaxPollIntervalMs,
-                QueuedMinMessages = options.QueuedMinMessages,
-                EnablePartitionEof = options.EnablePartitionEof,
+                BootstrapServers = _options.BootstrapServers,
+                GroupId = _options.GroupId,
+                EnableAutoCommit = _options.EnableAutoCommit,
+                AutoOffsetReset = Enum.Parse<AutoOffsetReset>(_options.AutoOffsetReset, true),
+                EnablePartitionEof = _options.EnablePartitionEof,
+                SessionTimeoutMs = _options.SessionTimeoutMs,
+                HeartbeatIntervalMs = _options.HeartbeatIntervalMs,
+                MaxPollIntervalMs = _options.MaxPollIntervalMs,
+                QueuedMinMessages = _options.QueuedMinMessages,
             };
 
-            _consumer = new ConsumerBuilder<string, string>(consumerConfig).SetValueDeserializer(Deserializers.Utf8).Build();
+            _consumer = new ConsumerBuilder<string, string>(consumerConfig)
+                .SetValueDeserializer(Deserializers.Utf8)
+                .Build();
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
