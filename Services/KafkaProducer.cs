@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
 
 namespace Messaging.Kafka.Services
 {
@@ -13,22 +13,38 @@ namespace Messaging.Kafka.Services
         private readonly ProducerKafkaOptions _options;
         private readonly ISerializer _serializer;
 
-        public KafkaProducer(IOptions<ProducerKafkaOptions> options, ISerializer serializer)
+        public KafkaProducer(ISerializer serializer)
         {
-            _options = options.Value;
             _serializer = serializer;
 
-            var config = new ProducerConfig
+            var configPath = Path.GetFullPath(
+                Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "..",
+                    "Messaging.Kafka",
+                    "consumer.config.json"
+                )
+            );
+            Console.WriteLine(configPath.ToString());
+
+            var config = new ConfigurationBuilder()
+                .AddJsonFile(configPath, optional: false, reloadOnChange: false)
+                .Build();
+            var options =
+                config.GetSection("ConsumerKafkaOptions").Get<ProducerKafkaOptions>()
+                ?? throw new Exception("Failed to load consumer.config.json");
+            var producerconfig = new ProducerConfig
             {
-                BootstrapServers = _options?.BootstrapServers,
-                ClientId = _options.ProducerClientId,
+                BootstrapServers = options?.BootstrapServers,
+                ClientId = options.ProducerClientId,
                 Acks = Acks.All,
-                EnableIdempotence = true,
+                EnableIdempotence = false,
                 MessageSendMaxRetries = 5,
                 RetryBackoffMs = 100,
+
             };
 
-            _producer = new ProducerBuilder<string, string>(config).Build();
+            _producer = new ProducerBuilder<string, string>(producerconfig).Build();
         }
 
         public async Task ProduceAsync(
