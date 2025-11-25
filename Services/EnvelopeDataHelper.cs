@@ -3,8 +3,8 @@
 // The router itself should not be responsible for deserializing JSON—that’s not its job.
 // Therefore, this helper exists to assist the router.
 using System.Text.Json;
-
-public class EnvelopeDataHelper
+using Messaging.Kafka.Interface;
+public class EnvelopeDataHelper : IEnvelopeDataHelper
 {
     private readonly JsonSerializerOptions _options;
 

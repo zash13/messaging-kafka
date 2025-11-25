@@ -4,6 +4,7 @@ using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Messaging.Kafka.Interface;
 
 
 namespace Messaging.Kafka.Services

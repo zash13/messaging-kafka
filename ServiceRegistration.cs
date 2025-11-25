@@ -3,6 +3,8 @@ using Messaging.Kafka.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Messaging.Kafka.Interface;
+
 namespace Messaging.Kafka
 
 {
@@ -16,6 +18,7 @@ namespace Messaging.Kafka
             services.AddSingleton<KafkaConsumer>();
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
+            services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
 
             return services;
         }

@@ -4,6 +4,7 @@ using Confluent.Kafka;
 using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
 using Microsoft.Extensions.Configuration;
+using Messaging.Kafka.Interface;
 
 namespace Messaging.Kafka.Services
 {
