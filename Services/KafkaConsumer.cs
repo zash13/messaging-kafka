@@ -24,17 +24,30 @@ namespace Messaging.Kafka.Services
             _options = optionsAccessor.Value ?? throw new ArgumentNullException(nameof(optionsAccessor));
             _topics = _options.Topics ?? throw new InvalidOperationException("Topics must be configured in ConsumerKafkaOptions");
 
-            var consumerConfig = new ConsumerConfig
+            var cfg = new ProducerConfig
             {
                 BootstrapServers = _options.BootstrapServers,
-                GroupId = _options.GroupId,
-                EnableAutoCommit = _options.EnableAutoCommit,
-                AutoOffsetReset = Enum.Parse<AutoOffsetReset>(_options.AutoOffsetReset, true),
-                EnablePartitionEof = _options.EnablePartitionEof,
-                SessionTimeoutMs = _options.SessionTimeoutMs,
-                HeartbeatIntervalMs = _options.HeartbeatIntervalMs,
-                MaxPollIntervalMs = _options.MaxPollIntervalMs,
-                QueuedMinMessages = _options.QueuedMinMessages,
+                ClientId = _options.ProducerClientId,
+                Acks = _options.Acks?.ToLower() switch
+                {
+                    "all" => Acks.All,
+                    "leader" => Acks.Leader,
+                    "none" or "0" => Acks.None,
+                    "1" => Acks.Leader, // "1" typically means leader acknowledgment
+                    _ => Acks.All // default fallback
+                },
+                EnableIdempotence = _options.EnableIdempotence,
+                MessageSendMaxRetries = _options.MessageSendMaxRetries,
+                LingerMs = _options.LingerMs,
+                CompressionType = _options.CompressionType?.ToLower() switch
+                {
+                    "none" => CompressionType.None,
+                    "gzip" => CompressionType.Gzip,
+                    "snappy" => CompressionType.Snappy,
+                    "lz4" => CompressionType.Lz4,
+                    "zstd" => CompressionType.Zstd,
+                    _ => CompressionType.None // default fallback
+                }
             };
 
             _consumer = new ConsumerBuilder<string, string>(consumerConfig)

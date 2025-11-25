@@ -1,13 +1,12 @@
 {
   "ProducerKafkaOptions": {
-    "BootstrapServers": "10.233.107.157:9092",
-    "ProducerClientId": "my-app-producer-v1",
-    "Acks": "all",
+    "BootstrapServers": "localhost:9092",
+    "ProducerClientId": "dotnet-producer",
+    "DefaultTopic": "events-topic",
     "EnableIdempotence": true,
+    "Acks": "all",
     "MessageSendMaxRetries": 5,
-    "RetryBackoffMs": 100,
     "LingerMs": 5,
-    "CompressionType": "snappy",
-    "DefaultTopic": "events-topic"
+    "CompressionType": "none"
   }
 }
