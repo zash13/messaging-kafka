@@ -2,7 +2,6 @@ using System.Text.Json;
 using Confluent.Kafka;
 using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -43,6 +42,8 @@ namespace Messaging.Kafka.Services
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // do not create another thread over here 
+            // BackgroundService is already a thread 
             StartConsumerLoop(stoppingToken);
             return Task.CompletedTask;
         }
@@ -75,7 +76,8 @@ namespace Messaging.Kafka.Services
                             if (result is { IsPartitionEOF: false })
                             {
                                 var envelope = JsonSerializer.Deserialize<Envelope>(result.Message.Value);
-                                Console.WriteLine($"CONSUMED → {result.Topic} | {result.Offset}");
+
+                                // this is where i need to call router , but nothing happen for now  
                                 _consumer.Commit(result);
                             }
                         }
