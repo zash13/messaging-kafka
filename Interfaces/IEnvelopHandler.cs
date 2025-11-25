@@ -1,5 +1,9 @@
-public interface IEnvelopeHandler<TData> where TData : IEnvelopeData
+namespace Messaging.Kafka.Interface
 {
-    Task HandelAsync(TData data);
 
+    public interface IEnvelopeHandler<TData> where TData : IEnvelopeData
+    {
+        Task HandelAsync(TData data);
+
+    }
 }

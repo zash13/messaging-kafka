@@ -1,7 +1,7 @@
 using Confluent.Kafka;
 using Messaging.Kafka.Common;
 
-namespace Messaging.Kafka.Services
+namespace Messaging.Kafka.Interface
 {
     public interface IConsumerHandler
     {

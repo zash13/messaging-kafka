@@ -1,4 +1,8 @@
-public interface IEnvelopeData
+namespace Messaging.Kafka.Interface
 {
 
+    public interface IEnvelopeData
+    {
+
+    }
 }
