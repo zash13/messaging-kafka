@@ -1,8 +1,9 @@
 using System.Text.Json;
 using Messaging.Kafka.Common;
+using Messaging.Kafka.Interface;
 namespace Messaging.Kafka.Services
 {
-    public class MessagDispatcher
+    public class MessagDispatcher : IMessageDispatcher
     {
         private readonly SemaphoreSlim _semaphore;
         private readonly EnvelopeRouter _router;
@@ -15,8 +16,10 @@ namespace Messaging.Kafka.Services
         public async Task DispatchAsync(Confluent.Kafka.ConsumeResult<string, string> result, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
-            _ = Task.Run(() => ProcessMessageAsync(result, cancellationToken), cancellationToken);
+            // no cancellationToken , you will loss message then in flight!!! 
+            _ = Task.Run(() => ProcessMessageAsync(result, cancellationToken));
         }
+        // cancellationToken is fake here ! 
         private async Task ProcessMessageAsync(Confluent.Kafka.ConsumeResult<string, string> result, CancellationToken cancellationToken)
         {
             try
