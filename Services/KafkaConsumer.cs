@@ -81,7 +81,8 @@ namespace Messaging.Kafka.Services
                                 var envelope = JsonSerializer.Deserialize<Envelope>(result.Message.Value);
                                 // this is where i need to call router , but nothing happen for now  
                                 await _router.RouteAsync(envelope);
-                                _consumer.Commit(result);
+                                // 
+                                //                                _consumer.Commit(result);
                             }
                         }
                         catch (ConsumeException ex)
