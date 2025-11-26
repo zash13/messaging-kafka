@@ -1,6 +1,6 @@
-using Messaging.Kafka.Common;
 
-namespace Messaging.Kafka.Interface
+
+namespace MessageFlow.Kafka.Abstractions
 {
     public interface IKafkaProducer
     {

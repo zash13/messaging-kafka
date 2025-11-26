@@ -1,9 +1,9 @@
-using Messaging.Kafka.Common;
 using System.Reflection;
-using Messaging.Kafka.Interface;
 using Microsoft.Extensions.DependencyInjection;
+using MessageFlow.Kafka.Abstractions;
 
-namespace Messaging.Kafka.Services
+
+namespace MessageFlow.Kafka.Internals
 {
 
     public class EnvelopeRouter
@@ -63,7 +63,7 @@ namespace Messaging.Kafka.Services
 
             // 3. Rest stays exactly the same
             var interfaceType = handlerType.GetInterfaces()
-                .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>));
+                .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnvelopeHandler<>));
 
             var payloadType = interfaceType.GetGenericArguments()[0];
 

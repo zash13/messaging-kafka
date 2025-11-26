@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-namespace Messaging.Kafka.Common
+namespace MessageFlow.Kafka.Abstractions
 {
     public class Envelope
     {

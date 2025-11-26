@@ -1,14 +1,13 @@
-using Messaging.Kafka.Config;
-using Messaging.Kafka.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Messaging.Kafka.Interface;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MessageFlow.Kafka.Internals;
+using MessageFlow.Kafka.Abstractions;
+using MessageFlow.Kafka.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 // order is matter 
-namespace Messaging.Kafka
-
+namespace MessageFlow.Kafka
 {
     public static class ServiceRegistration
     {
