@@ -4,7 +4,6 @@ using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Messaging.Kafka.Interface;
 
 
 namespace Messaging.Kafka.Services
@@ -15,14 +14,14 @@ namespace Messaging.Kafka.Services
         private readonly IConsumer<string, string> _consumer;
         private readonly IEnumerable<string> _topics;
         private readonly ConsumerKafkaOptions _options;
-        private readonly JsonSerializerOptions _jsonOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-        };
-        public KafkaConsumer(IOptions<ConsumerKafkaOptions> optionsAccessor)
+        private readonly EnvelopeRouter _router;
+        private readonly JsonSerializerOptions _jsonOptions;
+        public KafkaConsumer(IOptions<ConsumerKafkaOptions> optionsAccessor, EnvelopeRouter envelopeRouter, JsonSerializerOptions jsonOptions)
         {
             _options = optionsAccessor.Value ?? throw new ArgumentNullException(nameof(optionsAccessor));
             _topics = _options.Topics ?? throw new InvalidOperationException("Topics must be configured in ConsumerKafkaOptions");
+            _router = envelopeRouter;
+            _jsonOptions = jsonOptions;
 
             var consumerConfig = new ConsumerConfig
             {
@@ -58,7 +57,7 @@ namespace Messaging.Kafka.Services
         }
         private void Unsubscribe() => _consumer.Unsubscribe();
 
-        public void StartConsumerLoop(CancellationToken cancellationToken)
+        public async Task StartConsumerLoop(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -76,9 +75,12 @@ namespace Messaging.Kafka.Services
 
                             if (result is { IsPartitionEOF: false })
                             {
-                                var envelope = JsonSerializer.Deserialize<Envelope>(result.Message.Value);
+                                var rawMessage = result.Message.Value;
 
+                                Console.WriteLine($"Raw message from Kafka: '{rawMessage}'");
+                                var envelope = JsonSerializer.Deserialize<Envelope>(result.Message.Value);
                                 // this is where i need to call router , but nothing happen for now  
+                                await _router.RouteAsync(envelope);
                                 _consumer.Commit(result);
                             }
                         }

@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Messaging.Kafka.Interface;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Messaging.Kafka
 
@@ -19,7 +21,14 @@ namespace Messaging.Kafka
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
             services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
-
+            services.AddSingleton<EnvelopeRouter>();
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+            };
+            services.AddSingleton(jsonOptions);
             return services;
         }
     }
