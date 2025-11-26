@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Messaging.Kafka.Interface;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
+// order is matter 
 namespace Messaging.Kafka
 
 {
@@ -17,11 +17,13 @@ namespace Messaging.Kafka
             services.Configure<ConsumerKafkaOptions>(configuration.GetSection("ConsumerKafkaOptions"));
             services.Configure<ProducerKafkaOptions>(configuration.GetSection("ProducerKafkaOptions"));
             services.AddSingleton<ISerializer, SystemTextJsonSerializer>();
+            services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
+            services.AddSingleton<EnvelopeRouter>();
+            services.AddSingleton<IMessageDispatcher>(sp => new MessagDispatcher(sp.GetRequiredService<EnvelopeRouter>(), maxConcurrency: 100));
             services.AddSingleton<KafkaConsumer>();
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
-            services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
-            services.AddSingleton<EnvelopeRouter>();
+
             var jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -29,6 +31,7 @@ namespace Messaging.Kafka
                 Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
             };
             services.AddSingleton(jsonOptions);
+
             return services;
         }
     }
