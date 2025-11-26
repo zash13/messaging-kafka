@@ -1,12 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Messaging.Kafka.Common;
-using Messaging.Kafka.Config;
+using MessageFlow.Kafka.Abstractions;
+using MessageFlow.Kafka.Configuration;
 using Microsoft.Extensions.Options;
-using Messaging.Kafka.Interface;
+using MessageFlow.Kafka.Internals;
 
-namespace Messaging.Kafka.Services
+namespace MessageFlow.Kafka
 {
     public class KafkaProducer : IKafkaProducer, IDisposable
     {

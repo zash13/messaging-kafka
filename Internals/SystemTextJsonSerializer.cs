@@ -1,9 +1,9 @@
 // simple Serialize , i ask GPT for it
 using System;
 using System.Text.Json;
-using Messaging.Kafka.Interface;
 
-namespace Messaging.Kafka.Services
+
+namespace MessageFlow.Kafka.Internals
 {
     public class SystemTextJsonSerializer : ISerializer
     {

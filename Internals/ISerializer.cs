@@ -1,4 +1,4 @@
-namespace Messaging.Kafka.Interface
+namespace MessageFlow.Kafka.Internals
 {
     public interface ISerializer
     {

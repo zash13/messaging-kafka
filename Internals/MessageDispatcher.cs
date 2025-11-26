@@ -1,7 +1,6 @@
 using System.Text.Json;
-using Messaging.Kafka.Common;
-using Messaging.Kafka.Interface;
-namespace Messaging.Kafka.Services
+using MessageFlow.Kafka.Abstractions;
+namespace MessageFlow.Kafka.Internals
 {
     public class MessagDispatcher : IMessageDispatcher
     {

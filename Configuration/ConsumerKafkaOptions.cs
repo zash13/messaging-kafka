@@ -1,4 +1,4 @@
-namespace Messaging.Kafka.Config
+namespace MessageFlow.Kafka.Configuration
 {
     public class ConsumerKafkaOptions
     {
