@@ -1,4 +1,4 @@
-namespace Messaging.Kafka.Handlers
+namespace Messaging.Kafka.Interface
 {
     public interface IEventHandler<in TEvent>
     {

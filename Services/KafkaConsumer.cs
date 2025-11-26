@@ -1,57 +1,98 @@
-// read this repo
-// https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/examples/Consumer/Program.cs
 using System.Text.Json;
 using Confluent.Kafka;
 using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Messaging.Kafka.Interface;
 
 namespace Messaging.Kafka.Services
 {
 
-    public class KafkaConsumer : IKafkaConsumer, IDisposable
+    public class KafkaConsumer : BackgroundService
     {
         private readonly IConsumer<string, string> _consumer;
-        // OR (if you want to read the key later)
-        // private readonly IConsumer<string, string> _consumer;
+        private readonly IEnumerable<string> _topics;
+        private readonly IMessageDispatcher _messagDispatcher;
 
-        private readonly JsonSerializerOptions _jsonOptions = new()
+        public KafkaConsumer(IOptions<ConsumerKafkaOptions> optionsAccessor, IMessageDispatcher messagDispatcher)
         {
-            PropertyNameCaseInsensitive = true,
-        };
-        public KafkaConsumer()
-        {
-            var configPath = Path.GetFullPath(
-                Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "..",
-                    "Messaging.Kafka",
-                    "consumer.config.json"
-                )
-            );
-            Console.WriteLine(configPath.ToString());
-
-            var config = new ConfigurationBuilder()
-                .AddJsonFile(configPath, optional: false, reloadOnChange: false)
-                .Build();
-            var options =
-                config.GetSection("ConsumerKafkaOptions").Get<ConsumerKafkaOptions>()
-                ?? throw new Exception("Failed to load consumer.config.json");
+            var _options = optionsAccessor.Value ?? throw new ArgumentNullException(nameof(optionsAccessor));
+            _topics = _options.Topics ?? throw new InvalidOperationException("Topics must be configured in ConsumerKafkaOptions");
+            _messagDispatcher = messagDispatcher;
+            if (_options.EnableAutoCommit == true)
+                throw new NotSupportedException("AutoCommit is evables, consumer cannot work with that ");
 
             var consumerConfig = new ConsumerConfig
             {
-                BootstrapServers = options.BootstrapServers,
-                GroupId = options.GroupId,
-                EnableAutoCommit = options.EnableAutoCommit,
-                AutoOffsetReset = Enum.Parse<AutoOffsetReset>(options.AutoOffsetReset, true),
-                SessionTimeoutMs = options.SessionTimeoutMs,
-                HeartbeatIntervalMs = options.HeartbeatIntervalMs,
-                MaxPollIntervalMs = options.MaxPollIntervalMs,
-                QueuedMinMessages = options.QueuedMinMessages,
-                EnablePartitionEof = options.EnablePartitionEof,
+                BootstrapServers = _options.BootstrapServers,
+                GroupId = _options.GroupId,
+                EnableAutoCommit = _options.EnableAutoCommit, // this should be false 
+                AutoOffsetReset = Enum.Parse<AutoOffsetReset>(_options.AutoOffsetReset, true),
+                EnablePartitionEof = _options.EnablePartitionEof,
+                SessionTimeoutMs = _options.SessionTimeoutMs,
+                HeartbeatIntervalMs = _options.HeartbeatIntervalMs,
+                MaxPollIntervalMs = _options.MaxPollIntervalMs,
+                QueuedMinMessages = _options.QueuedMinMessages,
             };
 
-            _consumer = new ConsumerBuilder<string, string>(consumerConfig).SetValueDeserializer(Deserializers.Utf8).Build();
+            _consumer = new ConsumerBuilder<string, string>(consumerConfig)
+                .SetValueDeserializer(Deserializers.Utf8)
+                .Build();
+        }
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            return Task.Run(() => ConsumerLoop(stoppingToken), stoppingToken);
+        }
+
+        // this method is probably incorrect, but i’m not sure how to fix it.
+        // both consuming and dispatching need to block the current thread .
+        // consuming already blocks, but dispatching returns immediately if get a free thread
+        // available in the semaphore.
+        // suggestions for fixing this are welcome in here !, or anywhere ! 
+        // for that , i change it from async task to void !!! 
+        public void ConsumerLoop(CancellationToken cancellationToken)
+        {
+            TrySubscribe(cancellationToken);
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                ConsumeResult<string, string> result;
+                try
+                {
+                    result = _consumer.Consume(cancellationToken);
+
+                }
+                catch
+                {
+                    continue;
+                }
+                if (result == null || result.IsPartitionEOF)
+                    continue;
+                var dispatchTask = _messagDispatcher.DispatchAsync(result, cancellationToken);
+                //no cancellation token — commits must always complete if handler succeeded
+                _ = dispatchTask.ContinueWith(t =>
+                {
+                    if (!t.IsFaulted)
+                    {
+                        try { _consumer.Commit(result); } catch { }
+                    }
+                }, TaskContinuationOptions.ExecuteSynchronously);
+            }
+        }
+        private void TrySubscribe(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    _consumer.Subscribe(_topics);
+                    break;
+                }
+                catch (KafkaException e) when (e.Error.Code == ErrorCode.UnknownTopicOrPart)
+                {
+                    throw;
+                }
+            }
         }
         private void Subscribe(IEnumerable<string> topics)
         {
@@ -62,88 +103,11 @@ namespace Messaging.Kafka.Services
             _consumer.Subscribe(topic);
         }
         private void Unsubscribe() => _consumer.Unsubscribe();
-        public void ConsumeSingleMessage(string topic)
-        {
-            Subscribe(topic);
-            try
-            {
-                var consumeResult = _consumer.Consume();
-                if (consumeResult != null && !consumeResult.IsPartitionEOF)
-                {
-                    try
-                    {
-                        Console.WriteLine(consumeResult.Message.ToString());
-                        var envelope = JsonSerializer.Deserialize<Envelope>(
-                            consumeResult.Message.Value,
-                            _jsonOptions
-                        )!;
-
-                        Console.WriteLine(
-                            $"Event: {envelope.EventType} | Key: {consumeResult.Message.Key} | Aggregate: {envelope.AggregateId}"
-                        );
-                        Console.WriteLine($"envelope sutff : {envelope.Data.ToString()}");
-
-                        _consumer.Commit(consumeResult);
-                        Console.WriteLine("message committed successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Processing failed → {ex.Message}");
-                        // No commit → message will be retried
-                    }
-                    Console.WriteLine($"Consumed message: {consumeResult.Message.Value}");
-                }
-                else
-                {
-                    Console.WriteLine("No message available or reached end of partition.");
-                }
-            }
-            catch (ConsumeException e)
-            {
-                Console.WriteLine($"Error consuming message: {e.Error.Reason}");
-            }
-        }
-        public void ConsumeMessages(string topic)
-        {
-            Subscribe(topic);
-
-            try
-            {
-                while (true)
-                {
-                    var consumeResult = _consumer.Consume();
-                    try
-                    {
-                        Console.WriteLine(consumeResult.Message.ToString());
-                        var envelope = JsonSerializer.Deserialize<Envelope>(
-                            consumeResult.Message.Value,
-                            _jsonOptions
-                        )!;
-
-                        Console.WriteLine(
-                            $"Event: {envelope.EventType} | Key: {consumeResult.Message.Key} | Aggregate: {envelope.AggregateId}"
-                        );
-
-                        _consumer.Commit(consumeResult);
-                        Console.WriteLine("message commited successfully ");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Processing failed → {ex.Message}");
-                        // No commit → message will be retried
-                    }
-                    Console.WriteLine($"Consumed message: {consumeResult.Message.Value}");
-                }
-            }
-            catch (ConsumeException e)
-            {
-                Console.WriteLine($"Error consuming message: {e.Error.Reason}");
-            }
-        }
-        public void Dispose()
+        // override dispose from BackgroundService 
+        // i mean this come from BackgroundService not IDispose 
+        public override void Dispose()
         {
             _consumer?.Dispose();
         }
     }
-
 }

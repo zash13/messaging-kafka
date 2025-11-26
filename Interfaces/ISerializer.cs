@@ -1,6 +1,4 @@
-using System;
-
-namespace Messaging.Kafka.Services
+namespace Messaging.Kafka.Interface
 {
     public interface ISerializer
     {

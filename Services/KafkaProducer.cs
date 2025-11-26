@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Messaging.Kafka.Common;
 using Messaging.Kafka.Config;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Messaging.Kafka.Interface;
 
 namespace Messaging.Kafka.Services
 {
@@ -13,73 +14,78 @@ namespace Messaging.Kafka.Services
         private readonly ProducerKafkaOptions _options;
         private readonly ISerializer _serializer;
 
-        public KafkaProducer(ISerializer serializer)
+        public KafkaProducer(ISerializer serializer, IOptions<ProducerKafkaOptions> optionAccessor)
         {
-            _serializer = serializer;
+            _serializer = serializer ?? throw new ArgumentException(nameof(serializer));
+            _options = optionAccessor.Value ?? throw new ArgumentException(nameof(optionAccessor));
 
-            var configPath = Path.GetFullPath(
-                Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "..",
-                    "Messaging.Kafka",
-                    "consumer.config.json"
-                )
-            );
-            Console.WriteLine(configPath.ToString());
-
-            var config = new ConfigurationBuilder()
-                .AddJsonFile(configPath, optional: false, reloadOnChange: false)
-                .Build();
-            var options =
-                config.GetSection("ConsumerKafkaOptions").Get<ProducerKafkaOptions>()
-                ?? throw new Exception("Failed to load consumer.config.json");
-            var producerconfig = new ProducerConfig
+            // this method of using configs is wrong , iwill change it 
+            var cfg = new ProducerConfig
             {
-                BootstrapServers = options?.BootstrapServers,
-                ClientId = options.ProducerClientId,
-                Acks = Acks.All,
-                EnableIdempotence = false,
-                MessageSendMaxRetries = 5,
-                RetryBackoffMs = 100,
-
+                BootstrapServers = _options.BootstrapServers,
+                ClientId = _options.ProducerClientId,
+                Acks = _options.Acks?.ToLower() switch
+                {
+                    "all" => Acks.All,
+                    _ => Acks.All
+                },
+                EnableIdempotence = _options.EnableIdempotence,
+                MessageSendMaxRetries = _options.MessageSendMaxRetries,
+                LingerMs = _options.LingerMs,
+                CompressionType = _options.CompressionType?.ToLower() switch
+                {
+                    "none" => CompressionType.None,
+                    _ => CompressionType.None
+                }
             };
 
-            _producer = new ProducerBuilder<string, string>(producerconfig).Build();
+            _producer = new ProducerBuilder<string, string>(cfg).Build();
         }
 
         public async Task ProduceAsync(
             string topic,
-            string eventType,
-            IQueueMessage @event,
+            string envelopType,
+            IQueueMessage message,
             string? correlationId = null
         )
         {
             if (string.IsNullOrWhiteSpace(topic))
                 throw new ArgumentException(nameof(topic));
-            if (@event == null)
-                throw new ArgumentNullException(nameof(@event));
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
 
             var envelope = new Envelope
             {
-                EventType = eventType,
-                AggregateId = @event.Key,
+                EnvelopeType = envelopType,
+                AggregateId = message.Key,
                 CorrelationId = correlationId,
                 Timestamp = DateTimeOffset.UtcNow,
-                Data = @event,
+                Data = message,
             };
 
-            var json = _serializer.Serialize(envelope);
+            var payload = _serializer.Serialize(envelope);
 
-            var msg = new Message<string, string> { Key = @event.Key, Value = json };
+            var kafkaMessage = new Message<string, string> { Key = message.Key, Value = payload };
 
-            // Produce and wait for ack
-            var result = await _producer.ProduceAsync(topic, msg).ConfigureAwait(false);
-            // We don't use logger; user may want to inspect result in debugging
+            try
+            {
+                var result = await _producer.ProduceAsync(topic, kafkaMessage);
+            }
+            catch (ProduceException<string, string> ex)
+            {
+                Console.WriteLine($"Kafka produce error: {ex.Error.Reason}");
+                throw;
+            }
         }
 
         public void Dispose()
         {
-            _producer.Flush(TimeSpan.FromSeconds(5));
+            try
+            {
+
+                _producer.Flush(TimeSpan.FromSeconds(5));
+            }
+            catch { }
             _producer.Dispose();
         }
     }
