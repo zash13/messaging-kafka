@@ -1,7 +1,7 @@
 using MessageFlow.Kafka.Abstractions;
 namespace Example.Domain
 {
-    public class TestMessage : IQueueMessage
+    public class TestMessage
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
