@@ -8,7 +8,8 @@ using MessageFlow.Kafka.Internals;
 
 namespace MessageFlow.Kafka
 {
-    public class KafkaProducer : IKafkaProducer, IDisposable
+
+    public class KafkaProducer : IDisposable, IKafkaProducer
     {
         private readonly IProducer<string, string> _producer;
         private readonly ProducerKafkaOptions _options;
@@ -42,30 +43,30 @@ namespace MessageFlow.Kafka
             _producer = new ProducerBuilder<string, string>(cfg).Build();
         }
 
-        public async Task ProduceAsync(
-            string topic,
-            string envelopType,
-            IQueueMessage message,
-            string? correlationId = null
-        )
+        public async Task ProduceAsync<T>(
+            string topic, string envelopType, T message, string key, string? correlationId = null
+            )
         {
             if (string.IsNullOrWhiteSpace(topic))
                 throw new ArgumentException(nameof(topic));
             if (message == null)
                 throw new ArgumentNullException(nameof(message));
-
-            var envelope = new Envelope
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException(nameof(key));
+            var envelope = new Envelope()
             {
                 EnvelopeType = envelopType,
-                AggregateId = message.Key,
+                AggregateId = key,
                 CorrelationId = correlationId,
                 Timestamp = DateTimeOffset.UtcNow,
-                Data = message,
+                Data = message
             };
-
             var payload = _serializer.Serialize(envelope);
-
-            var kafkaMessage = new Message<string, string> { Key = message.Key, Value = payload };
+            var kafkaMessage = new Message<string, string>
+            {
+                Key = key,
+                Value = payload
+            };
 
             try
             {
@@ -88,5 +89,6 @@ namespace MessageFlow.Kafka
             catch { }
             _producer.Dispose();
         }
+
     }
 }

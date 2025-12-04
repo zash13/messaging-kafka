@@ -2,13 +2,11 @@
 
 namespace MessageFlow.Kafka.Abstractions
 {
+
+
     public interface IKafkaProducer
     {
-        Task ProduceAsync(
-            string topic,
-            string eventType,
-            IQueueMessage eventMessage,
-            string? correlationId = null
-        );
+        void Dispose();
+        Task ProduceAsync<T>(string topic, string envelopType, T message, string key, string? correlationId = null);
     }
 }

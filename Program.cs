@@ -101,10 +101,11 @@ class Program
                 TestList = new List<string> { "a", "b", "c", DateTime.Now.ToString("O") }
             };
 
-            await producer.ProduceAsync(
+            await producer.ProduceAsync<TestMessage>(
                 topic: topic,
-                eventType: "TestEvent",
-                eventMessage: testEvent,
+                envelopType: "TestEvent",
+                message: testEvent,
+                key: testEvent.Key,
                 correlationId: Guid.NewGuid().ToString()
             );
 
@@ -132,10 +133,11 @@ class Program
                     TestList = new List<string> { "batch", "message", $"#{i + 1}" }
                 };
 
-                await producer.ProduceAsync(
+                await producer.ProduceAsync<TestMessage>(
                     topic: topic,
-                    eventType: "TestEvent",
-                    eventMessage: testEvent,
+                    envelopType: "TestEvent",
+                    message: testEvent,
+                    key: testEvent.Key,
                     correlationId: Guid.NewGuid().ToString()
                 );
 
