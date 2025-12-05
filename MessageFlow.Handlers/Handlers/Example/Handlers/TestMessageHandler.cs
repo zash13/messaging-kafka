@@ -1,5 +1,5 @@
 using Example.Domain;
-using MessageFlow.Kafka.Abstractions;
+using MessageFlow.Handlers.Abstractions;
 
 namespace Example.Handler
 {

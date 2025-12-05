@@ -6,6 +6,8 @@ using MessageFlow.Kafka.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using MessageFlow.Handlers.Abstractions;
+using System.Reflection;
 // order is matter 
 // you can comment out either the consumer or the producer if you want.
 namespace MessageFlow.Kafka
@@ -28,14 +30,28 @@ namespace MessageFlow.Kafka
             services.AddSingleton(jsonOptions);
             #endregion
 
+            #region Register envelop handlers and create route rdictionary 
+            var handlers = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).Where(t => t.GetCustomAttribute<EnvelopHandlerAttribute>() != null).ToList();
+            var routeDictionary = new Dictionary<string, Type>();
+            foreach (var handler in handlers)
+            {
+                var attr = handler.GetCustomAttribute<EnvelopHandlerAttribute>()!;
+                routeDictionary[attr.EnvelopType] = handler;
+                // i dont know if this is corrent desision to register handlers in here or what 
+                // for now i keep it like this 
+                // but i dont know how this will effect threads and ...
+                services.AddTransient(handler);
+            }
+
+            #endregion
             #region Consumer Dependencies
             services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
-            services.AddSingleton<EnvelopeRouter>();
+            services.AddSingleton<IEnvelopeRouter>(sp => new EnvelopeRouter(sp, sp.GetRequiredService<IEnvelopeDataHelper>(), routeDictionary));
             services.AddSingleton<IMessageDispatcher>(sp => new MessagDispatcher(sp.GetRequiredService<EnvelopeRouter>(), maxConcurrency: 100));
             services.AddSingleton<KafkaConsumer>();
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
-            #endregion
 
+            #endregion
             #region Producer Dependencies
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
             #endregion
@@ -44,3 +60,4 @@ namespace MessageFlow.Kafka
         }
     }
 }
+

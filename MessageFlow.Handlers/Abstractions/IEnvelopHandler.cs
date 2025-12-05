@@ -1,4 +1,4 @@
-namespace MessageFlow.Kafka.Abstractions
+namespace MessageFlow.Handlers.Abstractions
 {
 
     public interface IEnvelopeHandler<in TEvent>

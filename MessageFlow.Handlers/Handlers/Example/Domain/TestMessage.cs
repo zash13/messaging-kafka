@@ -1,4 +1,3 @@
-using MessageFlow.Kafka.Abstractions;
 namespace Example.Domain
 {
     public class TestMessage

@@ -1,34 +1,28 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using MessageFlow.Kafka.Abstractions;
+using MessageFlow.Handlers.Abstractions;
 
 
 namespace MessageFlow.Kafka.Internals
 {
 
-    public class EnvelopeRouter
+    public class EnvelopeRouter : IEnvelopeRouter
     {
         private readonly IServiceProvider _provider;
         private readonly IEnvelopeDataHelper _dataHelper;
+        private readonly Dictionary<string, Type> _handlerMap;
 
-        public EnvelopeRouter(IServiceProvider provider, IEnvelopeDataHelper dataHelper)
+        public EnvelopeRouter(IServiceProvider provider, IEnvelopeDataHelper dataHelper, Dictionary<string, Type> map)
         {
             _provider = provider;
             _dataHelper = dataHelper;
+            _handlerMap = map;
         }
         public async Task RouteAsync(Envelope envelope)
         {
             if (envelope == null) return;
-
-            var handlerType = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a =>
-                {
-                    try { return a.GetTypes(); }
-                    catch (ReflectionTypeLoadException) { return Type.EmptyTypes; }
-                })
-                .FirstOrDefault(t => t.GetCustomAttribute<EnvelopHandlerAttribute>()?.EnvelopType == envelope.EnvelopeType);
-
-            if (handlerType == null) return;
+            if (!_handlerMap.TryGetValue(envelope.EnvelopeType, out var handlerType)) return;
 
             var handler = ActivatorUtilities.CreateInstance(_provider, handlerType);
 
@@ -47,6 +41,5 @@ namespace MessageFlow.Kafka.Internals
             var method = interfaceType.GetMethod("HandleAsync")!;
             await (Task)method.Invoke(handler, new object[] { payload, CancellationToken.None })!;
         }
-        static string TypeName(Type t) => t.FullName ?? t.Name;
     }
 }
