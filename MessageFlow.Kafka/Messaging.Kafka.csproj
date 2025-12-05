@@ -15,4 +15,8 @@
     <EmbeddedResource Include="Configuration/producer.config.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MessageFlow.Handlers\MessageFlow.Handlers.csproj" />
+  </ItemGroup>
+
 </Project>
