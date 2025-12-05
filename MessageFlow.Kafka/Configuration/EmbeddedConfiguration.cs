@@ -10,6 +10,12 @@ namespace MessageFlow.Kafka.Configuration
         {
             var assembly = Assembly.GetExecutingAssembly();
 
+            /*
+            // list for debugging
+            foreach (var n in _assembly.GetManifestResourceNames())
+                Console.WriteLine(n);
+             */
+
             AddEmbeddedJsonConfig(builder, assembly, "Messaging.Kafka.Configuration.consumer.config.json");
             AddEmbeddedJsonConfig(builder, assembly, "Messaging.Kafka.Configuration.producer.config.json");
 
@@ -18,14 +24,13 @@ namespace MessageFlow.Kafka.Configuration
 
         private static void AddEmbeddedJsonConfig(IConfigurationBuilder builder, Assembly assembly, string resourceName)
         {
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream != null)
-            {
-                using var reader = new StreamReader(stream);
-                var jsonContent = reader.ReadToEnd();
-                var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonContent));
-                builder.AddJsonStream(memoryStream);
-            }
+            using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new InvalidOperationException($"Embedded resource '{resourceName}' not found. Available: {string.Join(", ", assembly.GetManifestResourceNames())}");
+            var embeddedConfig = new ConfigurationBuilder()
+                                    .AddJsonStream(stream)
+                                    .Build();
+
+            builder.AddConfiguration(embeddedConfig);
+
         }
     }
 }

@@ -1,6 +1,6 @@
 {
   "ConsumerKafkaOptions": {
-    "BootstrapServers": "10.42.245.157:9092",
+    "BootstrapServers": "localhost:9092",
     "GroupId": "my-app-consumer-group-v2",
     "EnableAutoCommit": false,
     "AutoOffsetReset": "earliest",
