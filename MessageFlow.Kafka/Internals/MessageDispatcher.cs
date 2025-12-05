@@ -5,8 +5,8 @@ namespace MessageFlow.Kafka.Internals
     public class MessagDispatcher : IMessageDispatcher
     {
         private readonly SemaphoreSlim _semaphore;
-        private readonly EnvelopeRouter _router;
-        public MessagDispatcher(EnvelopeRouter router, int maxConcurrency = 100)
+        private readonly IEnvelopeRouter _router;
+        public MessagDispatcher(IEnvelopeRouter router, int maxConcurrency = 100)
         {
             _router = router;
             // no relase , immediatly enter all threads

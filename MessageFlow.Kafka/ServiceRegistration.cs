@@ -47,7 +47,7 @@ namespace MessageFlow.Kafka
             #region Consumer Dependencies
             services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
             services.AddSingleton<IEnvelopeRouter>(sp => new EnvelopeRouter(sp, sp.GetRequiredService<IEnvelopeDataHelper>(), routeDictionary));
-            services.AddSingleton<IMessageDispatcher>(sp => new MessagDispatcher(sp.GetRequiredService<EnvelopeRouter>(), maxConcurrency: 100));
+            services.AddSingleton<IMessageDispatcher>(sp => new MessagDispatcher(sp.GetRequiredService<IEnvelopeRouter>(), maxConcurrency: 100));
             services.AddSingleton<KafkaConsumer>();
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
 
