@@ -1,3 +1,6 @@
+// This class is not solid. It definitely lacks a single responsibility and is not safe.
+// If something goes wrong with your project, the issue could be here!
+// not mention threading is not properly implementd yet !!!!! 
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using MessageFlow.Kafka.Abstractions;
@@ -24,7 +27,10 @@ namespace MessageFlow.Kafka.Internals
             if (envelope == null) return;
             if (!_handlerMap.TryGetValue(envelope.EnvelopeType, out var handlerType)) return;
 
-            var handler = ActivatorUtilities.CreateInstance(_provider, handlerType);
+
+            // use scope provider insted of root provider 
+            using var scope = _provider.CreateScope();
+            var handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerType);
 
             // here i’m trying to cast object? data to your Data model type, which inherits from IEnvelopeData.
             // it’s important to create your model using this interface.
