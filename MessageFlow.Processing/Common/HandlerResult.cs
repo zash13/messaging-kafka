@@ -5,7 +5,7 @@
 // therefore, the dispatcher is the only component that knows enough to handle this properly.
 // i still have doubts about my threading implementation, but i plan to call the producer there
 // even though it might look wrong.
-namespace MessageFlow.Processing.Handlers.Abstractions
+namespace MessageFlow.Processing.Common
 {
     // soon or later , there will be an enum to seprate different status of handlers , i feel it 
     public class HandlerResult

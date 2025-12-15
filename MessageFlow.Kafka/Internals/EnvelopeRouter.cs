@@ -1,10 +1,10 @@
 // This class is not solid. It definitely lacks a single responsibility and is not safe.
 // If something goes wrong with your project, the issue could be here!
 // not mention threading is not properly implementd yet !!!!! 
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using MessageFlow.Kafka.Abstractions;
 using MessageFlow.Processing.Handlers.Abstractions;
+using MessageFlow.Processing.Common;
 
 
 namespace MessageFlow.Kafka.Internals

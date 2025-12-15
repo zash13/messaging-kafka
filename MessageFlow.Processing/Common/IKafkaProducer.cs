@@ -1,9 +1,5 @@
-
-
-namespace MessageFlow.Kafka.Abstractions
+namespace MessageFlow.Processing.Common
 {
-
-
     public interface IKafkaProducer
     {
         void Dispose();

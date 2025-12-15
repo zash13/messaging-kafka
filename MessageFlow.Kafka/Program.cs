@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Example.Domain;
-using MessageFlow.Kafka.Abstractions;
 using MessageFlow.Kafka;
 using MessageFlow.Kafka.Configuration;
+using MessageFlow.Processing.Common;
 
 class Program
 {

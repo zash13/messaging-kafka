@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using MessageFlow.Kafka.Abstractions;
 using MessageFlow.Kafka.Configuration;
 using Microsoft.Extensions.Options;
 using MessageFlow.Kafka.Internals;
+using MessageFlow.Processing.Common;
 
 namespace MessageFlow.Kafka
 {

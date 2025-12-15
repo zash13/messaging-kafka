@@ -1,5 +1,6 @@
 using Example.Domain;
 using MessageFlow.Processing.Handlers.Abstractions;
+using MessageFlow.Processing.Common;
 
 namespace Example.Handler
 {

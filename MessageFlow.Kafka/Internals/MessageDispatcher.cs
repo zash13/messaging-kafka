@@ -2,6 +2,7 @@ using System.Text.Json;
 using MessageFlow.Kafka.Abstractions;
 using MessageFlow.Processing.Handlers.Abstractions;
 using MessageFlow.Processing.Senders.Abstractions;
+using MessageFlow.Processing.Common;
 namespace MessageFlow.Kafka.Internals
 {
 
@@ -53,7 +54,7 @@ namespace MessageFlow.Kafka.Internals
                 // however, if a scenario arises in the future, update handlerresult:
                 // define a field and add a simple if-statement here.
                 // avoid writing heavy logic in this section.
-                _responseSender.send();
+                var sender = _responseSender.Get(envelope.ChannelType);
 
             }
             finally

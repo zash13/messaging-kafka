@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using MessageFlow.Processing.Senders;
 using MessageFlow.Processing.Senders.Abstractions;
+using MessageFlow.Processing.Common;
 // order is matter 
 // you can comment out either the consumer or the producer if you want.
 namespace MessageFlow.Kafka
@@ -44,11 +45,20 @@ namespace MessageFlow.Kafka
                 services.AddTransient(handler);
             }
 
+            #region response Dependencies
+
+            // register your senders over here 
+            //services.AddScoped<IResponseSender, WebResponseSender>();
+            //services.AddScoped<IResponseSender, TelegramResponseSender>();
+            services.AddScoped<IResponseSenderFactory, ResponseSenderFactory>();
+
+            #endregion
+
             #endregion
             #region Consumer Dependencies
             services.AddSingleton<IEnvelopeDataHelper, EnvelopeDataHelper>();
             services.AddSingleton<IEnvelopeRouter>(sp => new EnvelopeRouter(sp, sp.GetRequiredService<IEnvelopeDataHelper>(), routeDictionary));
-            services.AddSingleton<IMessagDispatcher>(sp => new MessagDispatcher(sp.GetRequiredService<IEnvelopeRouter>(), maxConcurrency: 100));
+            services.AddSingleton<IMessagDispatcher>(sp => new MessagDispatcher(sp.GetRequiredService<IEnvelopeRouter>(), sp.GetRequiredService<IResponseSenderFactory>(), maxConcurrency: 100));
             services.AddSingleton<KafkaConsumer>();
             services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<KafkaConsumer>());
 
@@ -57,11 +67,6 @@ namespace MessageFlow.Kafka
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
             #endregion
 
-            #region response Dependencies
-
-            services.AddScoped<IResponseSenderFactory, ResponseSenderFactory>();
-
-            #endregion
             return services;
         }
     }

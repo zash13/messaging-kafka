@@ -1,4 +1,4 @@
-using MessageFlow.Processing.Handlers.Abstractions;
+using MessageFlow.Processing.Common;
 namespace MessageFlow.Kafka.Abstractions
 {
 
