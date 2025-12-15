@@ -14,9 +14,9 @@ namespace MessageFlow.Kafka
     {
         private readonly IConsumer<string, string> _consumer;
         private readonly IEnumerable<string> _topics;
-        private readonly IMessageDispatcher _messagDispatcher;
+        private readonly IMessagDispatcher _messagDispatcher;
 
-        public KafkaConsumer(IOptions<ConsumerKafkaOptions> optionsAccessor, IMessageDispatcher messagDispatcher)
+        public KafkaConsumer(IOptions<ConsumerKafkaOptions> optionsAccessor, IMessagDispatcher messagDispatcher)
         {
             var _options = optionsAccessor.Value ?? throw new ArgumentNullException(nameof(optionsAccessor));
             _topics = _options.Topics ?? throw new InvalidOperationException("Topics must be configured in ConsumerKafkaOptions");

@@ -64,7 +64,7 @@ namespace MessageFlow.Handlers.Abstractions
             ShouldCommit = true,
 
         };
-        public static HandlerResult ServerFailuer(string serverMessage, string? userMessage = null, DateTimeOffset? timestemp = null) => new HandlerResult
+        public static HandlerResult ServerFailure(string serverMessage, string? userMessage = null, DateTimeOffset? timestemp = null) => new HandlerResult
         {
             IsSuccess = false,
             ServerMessage = serverMessage,

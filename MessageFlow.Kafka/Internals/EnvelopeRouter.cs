@@ -25,13 +25,13 @@ namespace MessageFlow.Kafka.Internals
         public async Task<HandlerResult> RouteAsync(Envelope envelope, CancellationToken cancellationToken)
         {
             if (envelope == null)
-                return HandlerResult.ServerFailuer(
+                return HandlerResult.ServerFailure(
                     serverMessage: "Envelope is null",
                     userMessage: "Server error "
                 );
 
             if (!_handlerMap.TryGetValue(envelope.EnvelopeType, out var handlerType))
-                return HandlerResult.ServerFailuer(
+                return HandlerResult.ServerFailure(
                     serverMessage: $"No handler found for envelope type: {envelope.EnvelopeType}",
                     userMessage: "Server error "
                 );
@@ -43,7 +43,7 @@ namespace MessageFlow.Kafka.Internals
                 .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnvelopeHandler<>));
 
             if (interfaceType == null)
-                return HandlerResult.ServerFailuer(
+                return HandlerResult.ServerFailure(
                     serverMessage: $"Handler does not implement IEnvelopeHandler<> or server cannot create instanse ",
                     userMessage: "Server error "
                 );
@@ -66,7 +66,7 @@ namespace MessageFlow.Kafka.Internals
             try
             {
                 if (method == null)
-                    return HandlerResult.ServerFailuer(
+                    return HandlerResult.ServerFailure(
                         serverMessage: "HandleAsync method not found on handler",
                         userMessage: "Handler configuration error"
                     );
@@ -77,12 +77,12 @@ namespace MessageFlow.Kafka.Internals
             }
             catch (OperationCanceledException)
             {
-                return HandlerResult.ServerFailuer(serverMessage: "operation was cancelled ");
+                return HandlerResult.ServerFailure(serverMessage: "operation was cancelled ");
             }
             catch (Exception ex)
             {
 
-                return HandlerResult.ServerFailuer(serverMessage: $"operation fauild : {ex} ");
+                return HandlerResult.ServerFailure(serverMessage: $"operation fauild : {ex} ");
             }
         }
     }
