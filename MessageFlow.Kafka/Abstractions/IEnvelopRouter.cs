@@ -1,8 +1,9 @@
+using MessageFlow.Handlers.Abstractions;
 namespace MessageFlow.Kafka.Abstractions
 {
 
     public interface IEnvelopeRouter
     {
-        Task RouteAsync(Envelope envelope);
+        Task<HandlerResult> RouteAsync(Envelope envelope, CancellationToken cancellationToken);
     }
 }

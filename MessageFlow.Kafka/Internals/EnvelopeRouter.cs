@@ -22,30 +22,68 @@ namespace MessageFlow.Kafka.Internals
             _dataHelper = dataHelper;
             _handlerMap = map;
         }
-        public async Task RouteAsync(Envelope envelope)
+        public async Task<HandlerResult> RouteAsync(Envelope envelope, CancellationToken cancellationToken)
         {
-            if (envelope == null) return;
-            if (!_handlerMap.TryGetValue(envelope.EnvelopeType, out var handlerType)) return;
+            if (envelope == null)
+                return HandlerResult.ServerFailuer(
+                    serverMessage: "Envelope is null",
+                    userMessage: "Server error "
+                );
 
+            if (!_handlerMap.TryGetValue(envelope.EnvelopeType, out var handlerType))
+                return HandlerResult.ServerFailuer(
+                    serverMessage: $"No handler found for envelope type: {envelope.EnvelopeType}",
+                    userMessage: "Server error "
+                );
 
-            // use scope provider insted of root provider 
             using var scope = _provider.CreateScope();
             var handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerType);
 
-            // here i’m trying to cast object? data to your Data model type, which inherits from IEnvelopeData.
-            // it’s important to create your model using this interface.
-            // additionally, your handler should inherit from IEnvelopeHandler<YourDataModel>
-            // where YourDataModel implements IEnvelopeData.
             var interfaceType = handlerType.GetInterfaces()
-                .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnvelopeHandler<>));
+                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnvelopeHandler<>));
+
+            if (interfaceType == null)
+                return HandlerResult.ServerFailuer(
+                    serverMessage: $"Handler does not implement IEnvelopeHandler<> or server cannot create instanse ",
+                    userMessage: "Server error "
+                );
 
             var payloadType = interfaceType.GetGenericArguments()[0];
             var payload = _dataHelper.CreatePayload(envelope.Data, payloadType);
 
-            if (payload == null) return;
+            if (payload == null)
+                return HandlerResult.ValidationError(
+                    serverMessage: "Failed to create payload from envelope data",
+                    userMessage: "Server error ",
+                    validationErrors: new
+                    {
+                        EnvelopeType = envelope.EnvelopeType,
+                        ExpectedType = payloadType.Name
+                    }
+                );
 
-            var method = interfaceType.GetMethod("HandleAsync")!;
-            await (Task)method.Invoke(handler, new object[] { payload, CancellationToken.None })!;
+            var method = interfaceType.GetMethod("HandleAsync");
+            try
+            {
+                if (method == null)
+                    return HandlerResult.ServerFailuer(
+                        serverMessage: "HandleAsync method not found on handler",
+                        userMessage: "Handler configuration error"
+                    );
+
+                var task = (Task<HandlerResult>)method.Invoke(handler, new object[] { payload, cancellationToken });
+                return await task;
+
+            }
+            catch (OperationCanceledException)
+            {
+                return HandlerResult.ServerFailuer(serverMessage: "operation was cancelled ");
+            }
+            catch (Exception ex)
+            {
+
+                return HandlerResult.ServerFailuer(serverMessage: $"operation fauild : {ex} ");
+            }
         }
     }
 }

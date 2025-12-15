@@ -10,6 +10,9 @@ namespace MessageFlow.Kafka.Abstractions
         [JsonPropertyName("envelope_type")]
         public string EnvelopeType { get; set; } = default!;
 
+        [JsonPropertyName("channel_type")]
+        public string ChannelType { get; set; } = default!;//telegram , web , other interfaces 
+
         [JsonPropertyName("event_version")]
         public int EventVersion { get; set; } = 1;
 

@@ -4,6 +4,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MessageFlow.Kafka.Internals;
 using MessageFlow.Kafka.Configuration;
+using MessageFlow.Kafka.Abstractions;
+using System.Threading.Tasks;
 
 namespace MessageFlow.Kafka
 {
@@ -50,7 +52,7 @@ namespace MessageFlow.Kafka
         // available in the semaphore.
         // suggestions for fixing this are welcome in here !, or anywhere ! 
         // for that , i change it from async task to void !!! 
-        public void ConsumerLoop(CancellationToken cancellationToken)
+        public async Task ConsumerLoop(CancellationToken cancellationToken)
         {
             TrySubscribe(cancellationToken);
             while (!cancellationToken.IsCancellationRequested)
@@ -67,15 +69,22 @@ namespace MessageFlow.Kafka
                 }
                 if (result == null || result.IsPartitionEOF)
                     continue;
-                var dispatchTask = _messagDispatcher.DispatchAsync(result, cancellationToken);
-                //no cancellation token — commits must always complete if handler succeeded
-                _ = dispatchTask.ContinueWith(t =>
+                DispatcherResutl dispatcherResutl;
+                try
                 {
-                    if (!t.IsFaulted)
-                    {
-                        try { _consumer.Commit(result); } catch { }
+                    dispatcherResutl = await _messagDispatcher.DispatchAsync(result, cancellationToken);
+                }
+                catch
+                {
+                    continue;
+                }
+                //no cancellation token — commits must always complete if handler succeeded
+
+                if (dispatcherResutl.ShouldCommit)
+                    try { _consumer.Commit(result); }
+                    catch
+                    {//log }
                     }
-                }, TaskContinuationOptions.ExecuteSynchronously);
             }
         }
         private void TrySubscribe(CancellationToken cancellationToken)
