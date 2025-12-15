@@ -4,7 +4,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using MessageFlow.Kafka.Abstractions;
-using MessageFlow.Handlers.Abstractions;
+using MessageFlow.Processing.Handlers.Abstractions;
 
 
 namespace MessageFlow.Kafka.Internals

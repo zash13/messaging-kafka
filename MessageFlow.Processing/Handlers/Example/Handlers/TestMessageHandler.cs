@@ -1,5 +1,5 @@
 using Example.Domain;
-using MessageFlow.Handlers.Abstractions;
+using MessageFlow.Processing.Handlers.Abstractions;
 
 namespace Example.Handler
 {
@@ -13,7 +13,7 @@ namespace Example.Handler
             Console.WriteLine($"   key : {msg.Key}");
             Console.WriteLine($"   datetiem  : {msg.Timestemp}");
             Console.WriteLine($"   list : {msg.TestList}");
-            return HandlerResult.Success();
+            return HandlerResult.Success("Success");
         }
     }
 }

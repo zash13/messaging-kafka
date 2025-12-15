@@ -1,6 +1,6 @@
 using System.Text.Json;
 using MessageFlow.Kafka.Abstractions;
-using MessageFlow.Handlers.Abstractions;
+using MessageFlow.Processing.Handlers.Abstractions;
 using Confluent.Kafka;
 namespace MessageFlow.Kafka.Internals
 {

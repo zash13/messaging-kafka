@@ -6,7 +6,6 @@ using MessageFlow.Kafka.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using MessageFlow.Handlers.Abstractions;
 using System.Reflection;
 // order is matter 
 // you can comment out either the consumer or the producer if you want.

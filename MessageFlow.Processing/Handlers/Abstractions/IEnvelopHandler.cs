@@ -1,4 +1,4 @@
-namespace MessageFlow.Handlers.Abstractions
+namespace MessageFlow.Processing.Handlers.Abstractions
 {
 
     public interface IEnvelopeHandler<in TEvent>

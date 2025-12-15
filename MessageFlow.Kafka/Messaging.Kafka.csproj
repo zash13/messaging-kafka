@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MessageFlow.Handlers\MessageFlow.Handlers.csproj" />
+    <ProjectReference Include="..\MessageFlow.Processing\MessageFlow.Processing.csproj" />
   </ItemGroup>
 
 </Project>
