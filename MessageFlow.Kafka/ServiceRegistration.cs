@@ -7,6 +7,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
+using MessageFlow.Processing.Senders;
+using MessageFlow.Processing.Senders.Abstractions;
 // order is matter 
 // you can comment out either the consumer or the producer if you want.
 namespace MessageFlow.Kafka
@@ -55,6 +57,11 @@ namespace MessageFlow.Kafka
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
             #endregion
 
+            #region response Dependencies
+
+            services.AddScoped<IResponseSenderFactory, ResponseSenderFactory>();
+
+            #endregion
             return services;
         }
     }

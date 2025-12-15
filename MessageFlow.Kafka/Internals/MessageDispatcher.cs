@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MessageFlow.Kafka.Abstractions;
 using MessageFlow.Processing.Handlers.Abstractions;
-using Confluent.Kafka;
+using MessageFlow.Processing.Senders.Abstractions;
 namespace MessageFlow.Kafka.Internals
 {
 
@@ -9,11 +9,13 @@ namespace MessageFlow.Kafka.Internals
     {
         private readonly SemaphoreSlim _semaphore;
         private readonly IEnvelopeRouter _router;
-        public MessagDispatcher(IEnvelopeRouter router, int maxConcurrency = 100)
+        private readonly IResponseSenderFactory _responseSender;
+        public MessagDispatcher(IEnvelopeRouter router, IResponseSenderFactory responseSender, int maxConcurrency = 100)
         {
             _router = router;
             // no relase , immediatly enter all threads
             _semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+            _responseSender = responseSender;
         }
         public async Task<DispatcherResutl> DispatchAsync(Confluent.Kafka.ConsumeResult<string, string> result, CancellationToken cancellationToken)
         {
@@ -51,7 +53,7 @@ namespace MessageFlow.Kafka.Internals
                 // however, if a scenario arises in the future, update handlerresult:
                 // define a field and add a simple if-statement here.
                 // avoid writing heavy logic in this section.
-                PublisherFactory();
+                _responseSender.send();
 
             }
             finally
