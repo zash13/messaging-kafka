@@ -54,9 +54,14 @@ namespace MessageFlow.Kafka.Internals
                 // define a field and add a simple if-statement here.
                 // avoid writing heavy logic in this section.
                 var sender = _responseSender.Get(envelope.Channel);
+                if (sender is null)
+                {
+                    Console.WriteLine("not sender found for this channel");
+                    return DispatcherResutl.NoCommit();
 
+                }
+                await sender.SendAsync(envelope, handlerResult, cancellationToken);
                 return handlerResult.ShouldCommit ? DispatcherResutl.Commit() : DispatcherResutl.NoCommit();
-
             }
             finally
             {
