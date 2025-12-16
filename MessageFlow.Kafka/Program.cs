@@ -103,11 +103,14 @@ class Program
 
             await producer.ProduceAsync<TestMessage>(
                 topic: topic,
-                envelopType: "TestEvent",
-                message: testEvent,
+                eventType: "TestEvent",
+                channel: "telegram",
+                payload: testEvent,
                 key: testEvent.Key,
-                correlationId: Guid.NewGuid().ToString()
-            );
+                correlationId: Guid.NewGuid().ToString(),
+                cancellationToken: new CancellationToken()
+
+                );
 
             Console.WriteLine($"✅ SENT → {testEvent.Name} (ID: {testEvent.Id})");
             Console.WriteLine("💡 Note: After sending the first message, the topic is created and consumer should automatically recover!");
@@ -135,11 +138,14 @@ class Program
 
                 await producer.ProduceAsync<TestMessage>(
                     topic: topic,
-                    envelopType: "TestEvent",
-                    message: testEvent,
+                    eventType: "TestEvent",
+                    channel: "telegram",
+                    payload: testEvent,
                     key: testEvent.Key,
-                    correlationId: Guid.NewGuid().ToString()
-                );
+                    correlationId: Guid.NewGuid().ToString(),
+                    cancellationToken: new CancellationToken()
+
+                    );
 
                 Console.WriteLine($"✅ SENT {i + 1}/{count} → {testEvent.Name} (ID: {testEvent.Id})");
                 await Task.Delay(100);

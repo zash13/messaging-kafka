@@ -8,7 +8,6 @@ using MessageFlow.Processing.Common;
 
 namespace MessageFlow.Kafka
 {
-
     public class KafkaProducer : IDisposable, IKafkaProducer
     {
         private readonly IProducer<string, string> _producer;
@@ -20,11 +19,11 @@ namespace MessageFlow.Kafka
             _serializer = serializer ?? throw new ArgumentException(nameof(serializer));
             _options = optionAccessor.Value ?? throw new ArgumentException(nameof(optionAccessor));
 
-            // this method of using configs is wrong , iwill change it 
             var cfg = new ProducerConfig
             {
                 BootstrapServers = _options.BootstrapServers,
                 ClientId = _options.ProducerClientId,
+                // this probably wrong , read more about acks
                 Acks = _options.Acks?.ToLower() switch
                 {
                     "all" => Acks.All,
@@ -33,6 +32,7 @@ namespace MessageFlow.Kafka
                 EnableIdempotence = _options.EnableIdempotence,
                 MessageSendMaxRetries = _options.MessageSendMaxRetries,
                 LingerMs = _options.LingerMs,
+                // this is also is not complite , read more about Compressions
                 CompressionType = _options.CompressionType?.ToLower() switch
                 {
                     "none" => CompressionType.None,
@@ -42,35 +42,112 @@ namespace MessageFlow.Kafka
 
             _producer = new ProducerBuilder<string, string>(cfg).Build();
         }
+        public async Task ProduceAsync<TContext, TPayload>(
+            string topic,
+            string eventType,
+            string channel,
+            TPayload payload,
+            string key,
+            TContext? context = null,
+            string? correlationId = null,
+            Dictionary<string, string>? metadata = null,
+            CancellationToken cancellationToken = default)
+            where TContext : class, new()
+        {
+            ValidateParameters(topic, eventType, channel, payload, key);
 
-        public async Task ProduceAsync<T>(
-            string topic, string envelopType, T message, string key, string? correlationId = null
-            )
+            var envelope = CreateEnvelope(eventType, channel, payload, context, correlationId, metadata);
+            await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
+        }
+
+        public async Task ProduceAsync<TPayload>(
+            string topic,
+            string eventType,
+            string channel,
+            TPayload payload,
+            string key,
+            object? context = null,
+            string? correlationId = null,
+            Dictionary<string, string>? metadata = null,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateParameters(topic, eventType, channel, payload, key);
+
+            var envelope = CreateEnvelope(eventType, channel, payload, context, correlationId, metadata);
+            await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
+        }
+
+        public async Task ProduceAsync<TPayload>(
+            string topic,
+            string eventType,
+            string channel,
+            TPayload payload,
+            string key,
+            string? correlationId = null,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateParameters(topic, eventType, channel, payload, key);
+
+            var envelope = CreateEnvelope(eventType, channel, payload, null, correlationId, null);
+            await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
+        }
+        #region helper methods 
+
+        private void ValidateParameters<T>(string topic, string eventType, string channel, T payload, string key)
         {
             if (string.IsNullOrWhiteSpace(topic))
-                throw new ArgumentException(nameof(topic));
-            if (message == null)
-                throw new ArgumentNullException(nameof(message));
+                throw new ArgumentException("Topic cannot be null or empty", nameof(topic));
+
+            if (string.IsNullOrWhiteSpace(eventType))
+                throw new ArgumentException("Event type cannot be null or empty", nameof(eventType));
+
+            if (string.IsNullOrWhiteSpace(channel))
+                throw new ArgumentException("Channel cannot be null or empty", nameof(channel));
+
+            if (payload == null)
+                throw new ArgumentNullException(nameof(payload));
+
             if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentException(nameof(key));
-            var envelope = new Envelope()
+                throw new ArgumentException("Key cannot be null or empty", nameof(key));
+        }
+
+        private Envelope CreateEnvelope<TPayload>(
+            string eventType,
+            string channel,
+            TPayload payload,
+            object? context,
+            string? correlationId,
+            Dictionary<string, string>? metadata)
+        {
+            return new Envelope
             {
-                EnvelopeType = envelopType,
-                AggregateId = key,
+                EventType = eventType,
+                Channel = channel,
                 CorrelationId = correlationId,
                 Timestamp = DateTimeOffset.UtcNow,
-                Data = message
+                Context = context,
+                Payload = payload,
+                Metadata = metadata
             };
-            var payload = _serializer.Serialize(envelope);
-            var kafkaMessage = new Message<string, string>
-            {
-                Key = key,
-                Value = payload
-            };
+        }
 
+        private async Task ProduceToKafkaAsync(
+            string topic,
+            string key,
+            Envelope envelope,
+            CancellationToken cancellationToken)
+        {
             try
             {
-                var result = await _producer.ProduceAsync(topic, kafkaMessage);
+                var payload = _serializer.Serialize(envelope);
+                var kafkaMessage = new Message<string, string>
+                {
+                    Key = key,
+                    Value = payload,
+                };
+
+                var result = await _producer.ProduceAsync(topic, kafkaMessage, cancellationToken);
+
             }
             catch (ProduceException<string, string> ex)
             {
@@ -79,6 +156,7 @@ namespace MessageFlow.Kafka
             }
         }
 
+        #endregion
         public void Dispose()
         {
             try

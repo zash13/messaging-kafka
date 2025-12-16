@@ -14,7 +14,7 @@ public sealed class TelegramResponseSender : IResponseSender
     public async Task SendAsync(
         Envelope envelope,
         HandlerResult handlerResult,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         #region mapping
         object response = new object();
@@ -37,14 +37,22 @@ public sealed class TelegramResponseSender : IResponseSender
 
         #region publish 
         // and then publish your message in here 
+        object payload = new();
+        object context = new();
+        long chatId = 1;
+        var correlationId = "0";
+
         await _producer.ProduceAsync(
             topic: "telegram.responses",
-            envelopType: "telegram.response",
-            message: response,
-            key: envelope.AggregateId,
-            correlationId: envelope.CorrelationId
+            eventType: "telegram.response",
+            channel: "telegram",
+            payload: payload,
+            key: $"telegram-{chatId}",
+            context: context,
+            correlationId: correlationId,
+            cancellationToken: cancellationToken
         );
-
-        #endregion
     }
+
+    #endregion
 }

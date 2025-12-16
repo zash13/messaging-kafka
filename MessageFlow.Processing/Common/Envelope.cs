@@ -1,23 +1,24 @@
 using System.Text.Json.Serialization;
 namespace MessageFlow.Processing.Common
 {
-    public class Envelope
+    public abstract class BaseEnvelope
     {
         // I’ve been thinking about how to change this to a more reliable method,
         // instead of relying on a string (EventType). However, when you consider
         // cross-language scenarios—like a Python sender and a C# receiver—
         // along with other factors, it’s difficult for me to replace this part with anything else.
-        [JsonPropertyName("envelope_type")]
-        public string EnvelopeType { get; set; } = default!;
+        [JsonPropertyName("envelope_id")]
+        public Guid EnvelopeId { get; set; } = Guid.NewGuid();
 
-        [JsonPropertyName("channel_type")]
-        public string ChannelType { get; set; } = default!;//telegram , web , other interfaces 
+        [JsonPropertyName("event_type")]
+        public string EventType { get; set; } = default!; // login ,shopcard ....
 
-        [JsonPropertyName("event_version")]
-        public int EventVersion { get; set; } = 1;
+        [JsonPropertyName("channel")]
+        public string Channel { get; set; } = default!;//telegram , web , other interfaces or users 
 
-        [JsonPropertyName("aggregate_id")]
-        public string AggregateId { get; set; } = default!;
+        // i dont know where , but version may be usefull in future 
+        [JsonPropertyName("version")]
+        public int Version { get; set; } = 1;
 
         [JsonPropertyName("correlation_id")]
         public string? CorrelationId { get; set; }
@@ -25,14 +26,20 @@ namespace MessageFlow.Processing.Common
         [JsonPropertyName("timestamp")]
         public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
+        // like region in web or message presentation property in telegram
         [JsonPropertyName("metadata")]
         public Dictionary<string, string>? Metadata { get; set; }
 
-        [JsonPropertyName("offset")]
-        public long Offset { get; set; } = 0;
+    }
+    public class Envelope : BaseEnvelope
+    {
+        // like token in web , like chatId or other related data to payload in telegram 
+        [JsonPropertyName("context")]
+        public object? Context { get; set; }
+        // this is new alternative instend of object data 
+        [JsonPropertyName("payload")]
+        public object? Payload { get; set; }
 
-        [JsonPropertyName("data")]
-        public object? Data { get; set; } // actual event payload
     }
 
 }

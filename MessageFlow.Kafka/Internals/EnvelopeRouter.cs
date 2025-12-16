@@ -30,9 +30,9 @@ namespace MessageFlow.Kafka.Internals
                     userMessage: "Server error "
                 );
 
-            if (!_handlerMap.TryGetValue(envelope.EnvelopeType, out var handlerType))
+            if (!_handlerMap.TryGetValue(envelope.EventType, out var handlerType))
                 return HandlerResult.ServerFailure(
-                    serverMessage: $"No handler found for envelope type: {envelope.EnvelopeType}",
+                    serverMessage: $"No handler found for envelope type: {envelope.EventType}",
                     userMessage: "Server error "
                 );
 
@@ -49,7 +49,7 @@ namespace MessageFlow.Kafka.Internals
                 );
 
             var payloadType = interfaceType.GetGenericArguments()[0];
-            var payload = _dataHelper.CreatePayload(envelope.Data, payloadType);
+            var payload = _dataHelper.CreatePayload(envelope.Payload, payloadType);
 
             if (payload == null)
                 return HandlerResult.ValidationError(
@@ -57,7 +57,7 @@ namespace MessageFlow.Kafka.Internals
                     userMessage: "Server error ",
                     validationErrors: new
                     {
-                        EnvelopeType = envelope.EnvelopeType,
+                        EnvelopeType = envelope.EventType,
                         ExpectedType = payloadType.Name
                     }
                 );

@@ -48,13 +48,14 @@ namespace MessageFlow.Kafka.Internals
                     // something unexcepted happen ,so no commit ( message is healthy ) here i am sure that if message processed in any step and failed , i have a result not exception 
                     return DispatcherResutl.NoCommit();
                 }
-                return handlerResult.ShouldCommit ? DispatcherResutl.Commit() : DispatcherResutl.NoCommit();
                 // this is the tricky part. i force myself to always send back a result for anything.
                 // currently, i don’t see any cases where a result message isn’t needed.
                 // however, if a scenario arises in the future, update handlerresult:
                 // define a field and add a simple if-statement here.
                 // avoid writing heavy logic in this section.
-                var sender = _responseSender.Get(envelope.ChannelType);
+                var sender = _responseSender.Get(envelope.Channel);
+
+                return handlerResult.ShouldCommit ? DispatcherResutl.Commit() : DispatcherResutl.NoCommit();
 
             }
             finally
