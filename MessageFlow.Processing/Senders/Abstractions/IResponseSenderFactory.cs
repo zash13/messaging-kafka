@@ -1,8 +1,8 @@
+using MessageFlow.Processing.Common;
 namespace MessageFlow.Processing.Senders.Abstractions
 {
     public interface IResponseSenderFactory
     {
-        IResponseSender? Get(string channelType);
-
+        Task SendAsync(Envelope envelope, HandlerResult handlerResult, CancellationToken cancellationToken);
     }
 }

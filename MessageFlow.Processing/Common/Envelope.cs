@@ -26,16 +26,13 @@ namespace MessageFlow.Processing.Common
         [JsonPropertyName("timestamp")]
         public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
-        // like region in web or message presentation property in telegram
-        [JsonPropertyName("metadata")]
-        public Dictionary<string, string>? Metadata { get; set; }
 
     }
     public class Envelope : BaseEnvelope
     {
-        // like token in web , like chatId or other related data to payload in telegram 
-        [JsonPropertyName("context")]
-        public object? Context { get; set; }
+        // like region in web or message presentation property in telegram
+        [JsonPropertyName("metadata")]
+        public Dictionary<string, string>? Metadata { get; set; }
         // this is new alternative instend of object data 
         [JsonPropertyName("payload")]
         public object? Payload { get; set; }

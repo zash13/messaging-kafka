@@ -1,25 +1,24 @@
+using Microsoft.Extensions.DependencyInjection;
+using MessageFlow.Processing.Common;
 using MessageFlow.Processing.Senders.Abstractions;
 namespace MessageFlow.Processing.Senders
 {
+
     public class ResponseSenderFactory : IResponseSenderFactory
     {
-        private readonly Dictionary<string, IResponseSender> _senders;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ResponseSenderFactory(IEnumerable<IResponseSender> senders)
+        public ResponseSenderFactory(IServiceProvider serviceProvider)
         {
-            _senders = senders.ToDictionary(
-                s => s.ChannelType,
-                StringComparer.OrdinalIgnoreCase);
+            _serviceProvider = serviceProvider;
         }
 
-        public IResponseSender? Get(string channelType)
+        public async Task SendAsync(Envelope envelope, HandlerResult handlerResult, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(channelType))
-                return null;
-
-            return _senders.TryGetValue(channelType, out var sender)
-                ? sender
-                : null;
+            var sender = _serviceProvider.GetServices<IResponseSender>().FirstOrDefault(s => s.ChannelType.Equals(envelope.Channel, StringComparison.OrdinalIgnoreCase));
+            if (sender is null)
+                throw new InvalidOperationException($"No sender for channel '{envelope.Channel}'");
+            await sender.SendAsync(envelope, handlerResult, cancellationToken);
         }
     }
 }

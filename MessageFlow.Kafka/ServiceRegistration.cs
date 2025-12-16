@@ -50,8 +50,7 @@ namespace MessageFlow.Kafka
             // register your senders over here 
             //services.AddScoped<IResponseSender, WebResponseSender>();
             //services.AddScoped<IResponseSender, TelegramResponseSender>();
-            services.AddScoped<IResponseSenderFactory, ResponseSenderFactory>();
-
+            services.AddSingleton<IResponseSenderFactory, ResponseSenderFactory>();
             #endregion
 
             #endregion

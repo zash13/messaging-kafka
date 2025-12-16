@@ -42,23 +42,6 @@ namespace MessageFlow.Kafka
 
             _producer = new ProducerBuilder<string, string>(cfg).Build();
         }
-        public async Task ProduceAsync<TContext, TPayload>(
-            string topic,
-            string eventType,
-            string channel,
-            TPayload payload,
-            string key,
-            TContext? context = null,
-            string? correlationId = null,
-            Dictionary<string, string>? metadata = null,
-            CancellationToken cancellationToken = default)
-            where TContext : class, new()
-        {
-            ValidateParameters(topic, eventType, channel, payload, key);
-
-            var envelope = CreateEnvelope(eventType, channel, payload, context, correlationId, metadata);
-            await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
-        }
 
         public async Task ProduceAsync<TPayload>(
             string topic,
@@ -66,14 +49,13 @@ namespace MessageFlow.Kafka
             string channel,
             TPayload payload,
             string key,
-            object? context = null,
             string? correlationId = null,
             Dictionary<string, string>? metadata = null,
             CancellationToken cancellationToken = default)
         {
             ValidateParameters(topic, eventType, channel, payload, key);
 
-            var envelope = CreateEnvelope(eventType, channel, payload, context, correlationId, metadata);
+            var envelope = CreateEnvelope(eventType, channel, payload, correlationId, metadata);
             await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
         }
 
@@ -88,7 +70,7 @@ namespace MessageFlow.Kafka
         {
             ValidateParameters(topic, eventType, channel, payload, key);
 
-            var envelope = CreateEnvelope(eventType, channel, payload, null, correlationId, null);
+            var envelope = CreateEnvelope(eventType, channel, payload, correlationId, null);
             await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
         }
         #region helper methods 
@@ -115,7 +97,6 @@ namespace MessageFlow.Kafka
             string eventType,
             string channel,
             TPayload payload,
-            object? context,
             string? correlationId,
             Dictionary<string, string>? metadata)
         {
@@ -125,7 +106,6 @@ namespace MessageFlow.Kafka
                 Channel = channel,
                 CorrelationId = correlationId,
                 Timestamp = DateTimeOffset.UtcNow,
-                Context = context,
                 Payload = payload,
                 Metadata = metadata
             };

@@ -48,7 +48,6 @@ public sealed class TelegramResponseSender : IResponseSender
             channel: "telegram",
             payload: payload,
             key: $"telegram-{chatId}",
-            context: context,
             correlationId: correlationId,
             cancellationToken: cancellationToken
         );
