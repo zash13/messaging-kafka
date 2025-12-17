@@ -49,7 +49,7 @@ namespace MessageFlow.Kafka.Internals
                 );
 
             var payloadType = interfaceType.GetGenericArguments()[0];
-            var payload = _dataHelper.CreatePayload(envelope.Payload, payloadType);
+            var payload = _dataHelper.Mapping(envelope.Payload, payloadType);
 
             if (payload == null)
                 return HandlerResult.ValidationError(
