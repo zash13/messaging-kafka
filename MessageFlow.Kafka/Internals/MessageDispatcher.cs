@@ -40,7 +40,7 @@ namespace MessageFlow.Kafka.Internals
                 HandlerResult handlerResult;
                 try
                 {
-                    handlerResult = await _router.RouteAsync(envelope, cancellationToken);
+                    handlerResult = await _router.RouteAsync(envelope.EventType, envelope.Payload.Body, cancellationToken);
                 }
                 catch
                 {
@@ -52,7 +52,7 @@ namespace MessageFlow.Kafka.Internals
                 // however, if a scenario arises in the future, update handlerresult:
                 // define a field and add a simple if-statement here.
                 // avoid writing heavy logic in this section.
-                var sender = _responseSender.SendAsync(envelope, handlerResult, cancellationToken);
+                var sender = _responseSender.SendAsync(envelope.Payload.Metadata, envelope.Channel, handlerResult, cancellationToken);
                 // what happen after sender is not matter , eather way message end its path and should get commited 
                 return handlerResult.ShouldCommit ? DispatcherResutl.Commit() : DispatcherResutl.NoCommit();
             }

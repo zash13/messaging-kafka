@@ -21,13 +21,6 @@ namespace MessageFlow.Processing.Common
         public DateTimeOffset? Timestemp { get; private set; }
 
         public string? UserMessage { get; set; }
-        // i may add other fields to this class in the future,
-        // such as execution time, retry counter, commit flag,
-        // error message, or an enum to specify the state of a message
-        // (for multi-stage messaging).
-        // additional fields that i don’t yet know may also be added later
-        //
-        //
         public bool ShouldCommit { get; private set; }
 
         #endregion

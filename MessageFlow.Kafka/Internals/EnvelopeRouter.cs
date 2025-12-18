@@ -22,17 +22,12 @@ namespace MessageFlow.Kafka.Internals
             _dataHelper = dataHelper;
             _handlerMap = map;
         }
-        public async Task<HandlerResult> RouteAsync(Envelope envelope, CancellationToken cancellationToken)
+        public async Task<HandlerResult> RouteAsync(string eventType, Object data, CancellationToken cancellationToken)
         {
-            if (envelope == null)
-                return HandlerResult.ServerFailure(
-                    serverMessage: "Envelope is null",
-                    userMessage: "Server error "
-                );
 
-            if (!_handlerMap.TryGetValue(envelope.EventType, out var handlerType))
+            if (!_handlerMap.TryGetValue(eventType, out var handlerType))
                 return HandlerResult.ServerFailure(
-                    serverMessage: $"No handler found for envelope type: {envelope.EventType}",
+                    serverMessage: $"No handler found for envelope type: {eventType}",
                     userMessage: "Server error "
                 );
 
@@ -49,7 +44,7 @@ namespace MessageFlow.Kafka.Internals
                 );
 
             var payloadType = interfaceType.GetGenericArguments()[0];
-            var payload = _dataHelper.Mapping(envelope.Payload, payloadType);
+            var payload = _dataHelper.Mapping(data, payloadType);
 
             if (payload == null)
                 return HandlerResult.ValidationError(
@@ -57,7 +52,7 @@ namespace MessageFlow.Kafka.Internals
                     userMessage: "Server error ",
                     validationErrors: new
                     {
-                        EnvelopeType = envelope.EventType,
+                        EnvelopeType = eventType,
                         ExpectedType = payloadType.Name
                     }
                 );

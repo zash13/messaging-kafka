@@ -13,12 +13,12 @@ namespace MessageFlow.Processing.Senders
             _serviceProvider = serviceProvider;
         }
 
-        public async Task SendAsync(Envelope envelope, HandlerResult handlerResult, CancellationToken cancellationToken)
+        public async Task SendAsync(Dictionary<string, string> metaData, string channel, HandlerResult handlerResult, CancellationToken cancellationToken)
         {
-            var sender = _serviceProvider.GetServices<IResponseSender>().FirstOrDefault(s => s.ChannelType.Equals(envelope.Channel, StringComparison.OrdinalIgnoreCase));
+            var sender = _serviceProvider.GetServices<IResponseSender>().FirstOrDefault(s => s.ChannelType.Equals(channel, StringComparison.OrdinalIgnoreCase));
             if (sender is null)
-                throw new InvalidOperationException($"No sender for channel '{envelope.Channel}'");
-            await sender.SendAsync(envelope, handlerResult, cancellationToken);
+                throw new InvalidOperationException($"No sender for channel '{channel}'");
+            await sender.SendAsync(metaData, handlerResult, cancellationToken);
         }
     }
 }

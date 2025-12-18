@@ -12,7 +12,7 @@ public sealed class WebResponseSender : IResponseSender
     public string ChannelType => "web";
 
     public async Task SendAsync(
-        Envelope envelope,
+        Dictionary<string, string> metaData,
         HandlerResult handlerResult,
         CancellationToken cancellationToken)
     {

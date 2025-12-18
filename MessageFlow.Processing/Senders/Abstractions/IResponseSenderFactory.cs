@@ -3,6 +3,6 @@ namespace MessageFlow.Processing.Senders.Abstractions
 {
     public interface IResponseSenderFactory
     {
-        Task SendAsync(Envelope envelope, HandlerResult handlerResult, CancellationToken cancellationToken);
+        Task SendAsync(Dictionary<string, string>? metaData, string channel, HandlerResult handlerResult, CancellationToken cancellationToken);
     }
 }

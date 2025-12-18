@@ -1,3 +1,4 @@
+// this envelop class is now too complecated , i dont like it and it need to change , once again , become simpler then the object that hiddedn beginde payload can be anything 
 using System.Text.Json.Serialization;
 namespace MessageFlow.Processing.Common
 {
@@ -28,15 +29,42 @@ namespace MessageFlow.Processing.Common
 
 
     }
-    public class Envelope : BaseEnvelope
+    public class Payload
     {
-        // like region in web or message presentation property in telegram
+
         [JsonPropertyName("metadata")]
         public Dictionary<string, string>? Metadata { get; set; }
         // this is new alternative instend of object data 
+        [JsonPropertyName("body")]
+        public object? Body { get; set; }
+    }
+    public class Envelope : BaseEnvelope
+    {
+        // don’t  tie your envelope to the payload 
+        // If your meta is just for logging, fine — but don’t drag it into real logic.
+        // Seriously, don’t use this shit. Put the damn meta inside the payload where it belongs.
+        // blive me , it has cost 
         [JsonPropertyName("payload")]
-        public object? Payload { get; set; }
+        public Payload Payload { get; set; }
 
+        // this is just here for id , nothing else , you should not create envelope by hand,  actualy , you should never see it , just use publisher methods 
+        public static Envelope Create(
+            string eventType,
+            string channel,
+            Payload? payload,
+            int? version = 1,
+            string? correlationId = null
+        )
+        {
+            return new Envelope
+            {
+                EventType = eventType,
+                Channel = channel,
+                Payload = payload ?? new Payload(),
+                Version = version ?? 1,
+                CorrelationId = correlationId,
+            };
+        }
     }
 
 }

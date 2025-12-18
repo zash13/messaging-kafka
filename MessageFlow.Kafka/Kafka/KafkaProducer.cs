@@ -5,6 +5,7 @@ using MessageFlow.Kafka.Configuration;
 using Microsoft.Extensions.Options;
 using MessageFlow.Kafka.Internals;
 using MessageFlow.Processing.Common;
+using System.Collections.Generic;
 
 namespace MessageFlow.Kafka
 {
@@ -53,8 +54,7 @@ namespace MessageFlow.Kafka
             Dictionary<string, string>? metadata = null,
             CancellationToken cancellationToken = default)
         {
-            ValidateParameters(topic, eventType, channel, payload, key);
-
+            ValidateParameters(topic, eventType, channel, key);
             var envelope = CreateEnvelope(eventType, channel, payload, correlationId, metadata);
             await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
         }
@@ -68,14 +68,14 @@ namespace MessageFlow.Kafka
             string? correlationId = null,
             CancellationToken cancellationToken = default)
         {
-            ValidateParameters(topic, eventType, channel, payload, key);
-
+            ValidateParameters(topic, eventType, channel, key);
             var envelope = CreateEnvelope(eventType, channel, payload, correlationId, null);
             await ProduceToKafkaAsync(topic, key, envelope, cancellationToken);
         }
+
         #region helper methods 
 
-        private void ValidateParameters<T>(string topic, string eventType, string channel, T payload, string key)
+        private void ValidateParameters(string topic, string eventType, string channel, string key)
         {
             if (string.IsNullOrWhiteSpace(topic))
                 throw new ArgumentException("Topic cannot be null or empty", nameof(topic));
@@ -85,9 +85,6 @@ namespace MessageFlow.Kafka
 
             if (string.IsNullOrWhiteSpace(channel))
                 throw new ArgumentException("Channel cannot be null or empty", nameof(channel));
-
-            if (payload == null)
-                throw new ArgumentNullException(nameof(payload));
 
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key cannot be null or empty", nameof(key));
@@ -100,15 +97,19 @@ namespace MessageFlow.Kafka
             string? correlationId,
             Dictionary<string, string>? metadata)
         {
-            return new Envelope
+            var payloadObj = new Payload
             {
-                EventType = eventType,
-                Channel = channel,
-                CorrelationId = correlationId,
-                Timestamp = DateTimeOffset.UtcNow,
-                Payload = payload,
+                Body = payload,
                 Metadata = metadata
             };
+
+            return Envelope.Create(
+                eventType: eventType,
+                channel: channel,
+                payload: payloadObj,
+                version: 1,
+                correlationId: correlationId
+            );
         }
 
         private async Task ProduceToKafkaAsync(
@@ -127,7 +128,6 @@ namespace MessageFlow.Kafka
                 };
 
                 var result = await _producer.ProduceAsync(topic, kafkaMessage, cancellationToken);
-
             }
             catch (ProduceException<string, string> ex)
             {
@@ -137,16 +137,15 @@ namespace MessageFlow.Kafka
         }
 
         #endregion
+
         public void Dispose()
         {
             try
             {
-
                 _producer.Flush(TimeSpan.FromSeconds(5));
             }
             catch { }
             _producer.Dispose();
         }
-
     }
 }

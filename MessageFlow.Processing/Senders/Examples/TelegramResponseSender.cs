@@ -12,7 +12,7 @@ public sealed class TelegramResponseSender : IResponseSender
     public string ChannelType => "telegram";
 
     public async Task SendAsync(
-        Envelope envelope,
+        Dictionary<string, string> metaData,
         HandlerResult handlerResult,
         CancellationToken cancellationToken)
     {
