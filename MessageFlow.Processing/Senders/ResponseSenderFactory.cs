@@ -1,9 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
 using MessageFlow.Processing.Common;
 using MessageFlow.Processing.Senders.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace MessageFlow.Processing.Senders
 {
-
     public class ResponseSenderFactory : IResponseSenderFactory
     {
         private readonly IServiceProvider _serviceProvider;
@@ -13,12 +13,30 @@ namespace MessageFlow.Processing.Senders
             _serviceProvider = serviceProvider;
         }
 
-        public async Task SendAsync(Dictionary<string, string> metaData, string channel, HandlerResult handlerResult, CancellationToken cancellationToken)
+        public async Task SendAsync(
+            Dictionary<string, string> metaData,
+            string channel,
+            HandlerResult handlerResult,
+            CancellationToken cancellationToken
+        )
         {
-            var sender = _serviceProvider.GetServices<IResponseSender>().FirstOrDefault(s => s.ChannelType.Equals(channel, StringComparison.OrdinalIgnoreCase));
-            if (sender is null)
+            // create a scope for scoped services , read more about root provider
+            using var scope = _serviceProvider.CreateScope();
+            var scopedProvider = scope.ServiceProvider;
+
+            var allSenders = scopedProvider.GetServices<IResponseSender>().ToList();
+
+            var matchedSender = allSenders.FirstOrDefault(s =>
+                s.ChannelType.Equals(channel, StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (matchedSender is null)
+            {
+                Console.WriteLine($"ERROR: No sender for channel '{channel}'");
                 throw new InvalidOperationException($"No sender for channel '{channel}'");
-            await sender.SendAsync(metaData, handlerResult, cancellationToken);
+            }
+
+            await matchedSender.SendAsync(metaData, handlerResult, cancellationToken);
         }
     }
 }

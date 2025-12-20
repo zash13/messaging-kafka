@@ -1,5 +1,5 @@
-
 using MessageFlow.Processing.Common;
+
 public sealed class TelegramResponseSender : IResponseSender
 {
     private readonly IKafkaProducer _producer;
@@ -14,44 +14,40 @@ public sealed class TelegramResponseSender : IResponseSender
     public async Task SendAsync(
         Dictionary<string, string> metaData,
         HandlerResult handlerResult,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
-        #region mapping
-        object response = new object();
-        // your maping happens here 
         /*
-        if (handlerResult.Data == null && handlerResult.UserMessage == null)
-            return;
-
-        var response = TelegramResponse<object>.Create(
-            type: "text",
-            data: handlerResult.Data,
-            meta: TelegramMeta.Create(
-                chatId: long.Parse(envelope.AggregateId),
-                markdown: true
-            )
-        );
-
+          #region mapping
+          if (handlerResult.Data == null && handlerResult.UserMessage == null)
+              return;
+          if (!long.TryParse(metaData.GetValue("chat_id"), out var chatId))
+          {
+              Console.WriteLine("fuck");
+              return;
+          }
+          foreach (var item in metaData)
+              Console.WriteLine($"reitem {item.Key} , {item.Value}");
+          Console.WriteLine("chatId");
+  
+          var response = TelegramTextResponse.Create("text", handlerResult.UserMessage, chatId);
+          #endregion
+  
+          #region publish
+          // and then publish your message in here
+          var correlationId = "0";
+  
+          // iam not in mode to include them
+          await _producer.ProduceAsync(
+              topic: MessageContracts.Constants.MessageTopic.Response.Name,
+              eventType: MessageContracts.Constants.MessageType.ResponsText.Type,
+              channel: "telegram",
+              payload: response,
+              key: $"telegram-{chatId}",
+              correlationId: correlationId,
+              cancellationToken: cancellationToken
+          );
+          #endregion
          */
-        #endregion
-
-        #region publish 
-        // and then publish your message in here 
-        object payload = new();
-        object context = new();
-        long chatId = 1;
-        var correlationId = "0";
-
-        await _producer.ProduceAsync(
-            topic: "telegram.responses",
-            eventType: "telegram.response",
-            channel: "telegram",
-            payload: payload,
-            key: $"telegram-{chatId}",
-            correlationId: correlationId,
-            cancellationToken: cancellationToken
-        );
     }
-
-    #endregion
 }
